@@ -177,6 +177,7 @@ body {
 
 .size-selector {
     flex: 1;
+    margin-right: 15px;
 }
 
 .size-selector label {
