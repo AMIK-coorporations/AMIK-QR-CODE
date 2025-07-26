@@ -10,8 +10,11 @@ class QRCodeGenerator {
         this.clearBtn = document.getElementById('clear-btn');
         this.loading = document.getElementById('loading');
         this.errorMessage = document.getElementById('error-message');
+        this.logoInput = document.getElementById('logo-input');
+        this.removeLogoBtn = document.getElementById('remove-logo-btn');
         
         this.currentQRCode = null;
+        this.logoImage = null;
         this.debounceTimer = null;
         this.deferredPrompt = null; // For PWA installation
         
@@ -25,12 +28,51 @@ class QRCodeGenerator {
         this.downloadBtn.addEventListener('click', () => this.downloadQRCode());
         this.copyBtn.addEventListener('click', () => this.copyQRCode());
         this.clearBtn.addEventListener('click', () => this.clearInput());
+        this.logoInput.addEventListener('change', (e) => this.handleLogoUpload(e));
+        this.removeLogoBtn.addEventListener('click', () => this.removeLogo());
         
         // PWA installation handling
         this.initPWA();
         
         // Focus on input
         this.qrInput.focus();
+    }
+
+    handleLogoUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                this.logoImage = img;
+                this.removeLogoBtn.style.display = 'inline-block';
+                this.generateQRCode();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeLogo() {
+        this.logoImage = null;
+        this.logoInput.value = '';
+        this.removeLogoBtn.style.display = 'none';
+        this.generateQRCode();
+    }
+
+    drawLogoOnCanvas(canvas, logo) {
+        const ctx = canvas.getContext('2d');
+        const logoSize = canvas.width * 0.25; // Logo will be 25% of the QR code size
+        const logoX = (canvas.width - logoSize) / 2;
+        const logoY = (canvas.height - logoSize) / 2;
+
+        // Draw a white background for the logo
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(logoX - 5, logoY - 5, logoSize + 10, logoSize + 10);
+
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
     }
     
     debounceGenerate() {
@@ -76,7 +118,7 @@ class QRCodeGenerator {
                         dark: '#000000',
                         light: '#FFFFFF'
                     },
-                    errorCorrectionLevel: 'M'
+                    errorCorrectionLevel: 'H' // Use 'H' for high error correction when adding a logo
                 }, (error) => {
                     if (error) {
                         reject(error);
@@ -85,6 +127,10 @@ class QRCodeGenerator {
                     }
                 });
             });
+
+            if (this.logoImage) {
+                this.drawLogoOnCanvas(canvas, this.logoImage);
+            }
             
             // Style the canvas
             canvas.id = 'qr-code';
