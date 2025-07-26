@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMIK QR CODE</title>
+    <meta name="description" content="Futuristic QR Code Generator - Create QR codes instantly with a modern interface">
+    <meta name="keywords" content="QR code, generator, futuristic, AMIK, barcode, scanner">
+    <meta name="author" content="AMIK QR CODE">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#00ffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AMIK QR CODE">
+    <meta name="application-name" content="AMIK QR CODE">
+    <meta name="msapplication-TileColor" content="#00ffff">
+    <meta name="msapplication-TileImage" content="favicon.ico">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="favicon.ico">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://api.qrserver.com">
+    <script src="qrcode.min.js"></script>
+    <script>
+        // QR Code library ready check
+        window.QRLibraryReady = false;
+        
+        // Check if QR library loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof QRCode !== 'undefined') {
+                window.QRLibraryReady = true;
+                console.log('QR Code library loaded successfully');
+            } else {
+                console.warn('QR library not found, using API fallback');
+                window.QRLibraryReady = 'fallback';
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="icon.svg" alt="AMIK QR CODE" class="logo-icon">
+                <h1 class="logo-text">AMIK QR CODE</h1>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="generator-section">
+                <div class="input-section">
+                    <h2>Generate QR Code</h2>
+                    <div class="input-group">
+                        <label for="qr-input">Enter text or URL:</label>
+                        <textarea 
+                            id="qr-input" 
+                            placeholder="Enter text, URL, or any content to generate QR code..."
+                            rows="4"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="options">
+                        <div class="size-selector">
+                            <label for="qr-size">QR Code Size:</label>
+                            <select id="qr-size">
+                                <option value="200">Small (200x200)</option>
+                                <option value="300" selected>Medium (300x300)</option>
+                                <option value="400">Large (400x400)</option>
+                                <option value="500">Extra Large (500x500)</option>
+                            </select>
+                        </div>
+                        
+                        <button id="clear-btn" class="btn-secondary">
+                            <span class="btn-text">Clear</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="output-section">
+                    <div class="qr-display">
+                        <div id="qr-container" class="qr-container">
+                            <div class="placeholder">
+                                <img src="icon.svg" alt="AMIK QR CODE" class="placeholder-icon">
+                                <p>Enter text to generate QR code</p>
+                            </div>
+                        </div>
+                        
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>Generating QR Code...</p>
+                        </div>
+                        
+                        <div class="error-message" id="error-message">
+                            <p>Error generating QR code. Please try again.</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons" id="action-buttons" style="display: none;">
+                        <button id="download-btn" class="btn-primary">
+                            <span class="btn-text">Download PNG</span>
+                        </button>
+                        <button id="copy-btn" class="btn-primary">
+                            <span class="btn-text">Copy to Clipboard</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 AMIK QR CODE - Progressive Web App</p>
+            <p>Installable • Offline Ready • Futuristic Design</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
