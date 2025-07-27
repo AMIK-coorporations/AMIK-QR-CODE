@@ -29,7 +29,6 @@
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://api.qrserver.com">
-    <script src="https://cdn.jsdelivr.net/gh/kozakdenys/qr-code-styling@latest/dist/qr-code-styling.js"></script>
 </head>
 <body>
     <div class="container">
@@ -50,7 +49,7 @@
                     <div class="qr-type-selector">
                         <button class="qr-type-btn active" data-type="text">Text/URL</button>
                         <button class="qr-type-btn" data-type="wifi">WiFi</button>
-                        <button class="qr-type-btn" data-type="image">Image</button>
+                        <button class="qr-type-btn" data-type="youtube">YouTube</button>
                         <button class="qr-type-btn" data-type="video">Video</button>
                     </div>
 
@@ -79,17 +78,10 @@
                             </select>
                         </div>
 
-                        <!-- Image Input -->
-                        <div class="input-group" data-type="image" style="display: none;">
-                            <label for="image-file">Upload Image (max 2KB):</label>
-                            <div id="image-drop-zone" class="drop-zone">
-                                <p>Drag & drop an image here, or click to select a file.</p>
-                                <input type="file" id="image-file" accept="image/png, image/jpeg, image/gif" style="display: none;">
-                            </div>
-                            <div id="image-preview-container" style="display: none;">
-                                <img id="image-preview" src="#" alt="Image Preview">
-                                <button id="remove-image-btn" class="btn-secondary">Remove Image</button>
-                            </div>
+                        <!-- YouTube Input -->
+                        <div class="input-group" data-type="youtube" style="display: none;">
+                            <label for="youtube-url">YouTube Video or Channel URL:</label>
+                            <input type="url" id="youtube-url" placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/@channel">
                         </div>
 
                         <!-- Video Input -->
@@ -112,74 +104,6 @@
                         <button id="clear-btn" class="btn-secondary">
                             <span class="btn-text">Clear</span>
                         </button>
-                    </div>
-
-                    <!-- Body Patterns Section -->
-                    <div class="body-patterns-section">
-                        <h3>Body Patterns</h3>
-                        <div class="pattern-grid">
-                            <div class="pattern-item active" data-pattern="default">
-                                <div class="pattern-preview" data-pattern="default"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="cyber">
-                                <div class="pattern-preview" data-pattern="cyber"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="ocean">
-                                <div class="pattern-preview" data-pattern="ocean"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="sunset">
-                                <div class="pattern-preview" data-pattern="sunset"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="forest">
-                                <div class="pattern-preview" data-pattern="forest"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="nebula">
-                                <div class="pattern-preview" data-pattern="nebula"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="gold">
-                                <div class="pattern-preview" data-pattern="gold"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="ruby">
-                                <div class="pattern-preview" data-pattern="ruby"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="emerald">
-                                <div class="pattern-preview" data-pattern="emerald"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="sapphire">
-                                <div class="pattern-preview" data-pattern="sapphire"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="amethyst">
-                                <div class="pattern-preview" data-pattern="amethyst"></div>
-                            </div>
-                            <div class="pattern-item" data-pattern="toxic">
-                                <div class="pattern-preview" data-pattern="toxic"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="color-options">
-                            <div class="color-type-selector">
-                                <label class="radio-option">
-                                    <input type="radio" name="color-type" value="single" checked>
-                                    <span class="radio-custom"></span>
-                                    Single Color
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="color-type" value="gradient">
-                                    <span class="radio-custom"></span>
-                                    Color Gradient
-                                </label>
-                            </div>
-                            
-                            <div class="color-picker-section">
-                                <input type="color" id="primary-color" value="#000000">
-                                <input type="color" id="secondary-color" value="#ffffff" style="display: none;">
-                                <button id="color-picker-btn" class="color-picker-btn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Hidden select for compatibility -->
@@ -246,5 +170,6 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="qrcode.min.js"></script>
 </body>
 </html>

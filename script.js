@@ -22,8 +22,7 @@ class QRCodeGenerator {
         this.imagePreviewContainer = document.getElementById('image-preview-container');
         this.imagePreview = document.getElementById('image-preview');
         this.removeImageBtn = document.getElementById('remove-image-btn');
-        this.patternSelect = document.getElementById('pattern-select');
-
+        // Remove patternSelect and pattern-related fields
         // Body patterns elements
         this.patternItems = document.querySelectorAll('.pattern-item');
         this.primaryColorPicker = document.getElementById('primary-color');
@@ -73,10 +72,7 @@ class QRCodeGenerator {
         this.imageDropZone.addEventListener('drop', (e) => this.handleDrop(e));
         this.imageFile.addEventListener('change', (e) => this.handleImageFile(e.target.files[0]));
         this.removeImageBtn.addEventListener('click', () => this.removeImage());
-        this.patternSelect.addEventListener('change', () => this.generateQRCode());
-        
-        // Body patterns event listeners
-        this.initBodyPatterns();
+        // Remove patternSelect event listener in init()
         
         // PWA installation handling
         this.initPWA();
@@ -88,7 +84,10 @@ class QRCodeGenerator {
     handleLogoUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
-
+        if (file.size > 102400) {
+            this.showError('Logo image size must be 100KB or less.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
@@ -140,21 +139,19 @@ class QRCodeGenerator {
     }
 
     handleImageFile(file) {
-        if (file && file.size > 2048) {
-            this.showError('Image size must be less than 2KB.');
+        if (!file) return;
+        if (file.size > 102400) {
+            this.showError('Image size must be 100KB or less.');
             return;
         }
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                this.imageData = event.target.result;
-                this.imagePreview.src = this.imageData;
-                this.imagePreviewContainer.style.display = 'block';
-                this.imageDropZone.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            this.imageData = event.target.result;
+            this.imagePreview.src = event.target.result;
+            this.imagePreviewContainer.style.display = 'block';
+            this.generateQRCode();
+        };
+        reader.readAsDataURL(file);
     }
 
     removeImage() {
@@ -164,44 +161,43 @@ class QRCodeGenerator {
         this.imageDropZone.style.display = 'block';
     }
 
-    getPatternColors(pattern) {
-        const patterns = {
-            'default': { dark: '#000000', light: '#FFFFFF' },
-            'cyber': { dark: '#00ffff', light: '#0a0a0a' },
-            'ocean': { dark: '#004d7a', light: '#e0f7fa' },
-            'sunset': { dark: '#c33764', light: '#f8f3d4' },
-            'forest': { dark: '#134e4a', light: '#f0fdf4' },
-            'nebula': { dark: '#4c1d95', light: '#f5f3ff' },
-            'gold': { dark: '#785a28', light: '#fffbeb' },
-            'ruby': { dark: '#9f1239', light: '#fff1f2' },
-            'emerald': { dark: '#065f46', light: '#ecfdf5' },
-            'sapphire': { dark: '#1e40af', light: '#eff6ff' },
-            'mono-light': { dark: '#525252', light: '#f5f5f5' },
-            // Premium Patterns
-            'amethyst': { dark: '#9966cc', light: '#f3e5f5' },
-            'citrine': { dark: '#f4a261', light: '#fff8e1' },
-            'rose-gold': { dark: '#b76e79', light: '#fce4ec' },
-            'midnight': { dark: '#003366', light: '#e1e8f0' },
-            'toxic': { dark: '#7fff00', light: '#1a1a1a' },
-            'lava': { dark: '#d73721', light: '#ffeadb' },
-            'ice': { dark: '#87ceeb', light: '#f0ffff' },
-            'royal': { dark: '#4b0082', light: '#fffacd' },
-            'holographic': { dark: '#ff00ff', light: '#e0ffff' },
-            'monochrome-dark': { dark: '#e0e0e0', light: '#212121' }
-        };
-        return patterns[pattern] || patterns.default;
-    }
+    // Remove getPatternColors and switchQrType
+    // getPatternColors(pattern) {
+    //     const patterns = {
+    //         'default': { dark: '#000000', light: '#FFFFFF' },
+    //         'cyber': { dark: '#00ffff', light: '#0a0a0a' },
+    //         'ocean': { dark: '#004d7a', light: '#e0f7fa' },
+    //         'sunset': { dark: '#c33764', light: '#f8f3d4' },
+    //         'forest': { dark: '#134e4a', light: '#f0fdf4' },
+    //         'nebula': { dark: '#4c1d95', light: '#f5f3ff' },
+    //         'gold': { dark: '#785a28', light: '#fffbeb' },
+    //         'ruby': { dark: '#9f1239', light: '#fff1f2' },
+    //         'emerald': { dark: '#065f46', light: '#ecfdf5' },
+    //         'sapphire': { dark: '#1e40af', light: '#eff6ff' },
+    //         'mono-light': { dark: '#525252', light: '#f5f5f5' },
+    //         // Premium Patterns
+    //         'amethyst': { dark: '#9966cc', light: '#f3e5f5' },
+    //         'citrine': { dark: '#f4a261', light: '#fff8e1' },
+    //         'rose-gold': { dark: '#b76e79', light: '#fce4ec' },
+    //         'midnight': { dark: '#003366', light: '#e1e8f0' },
+    //         'toxic': { dark: '#7fff00', light: '#1a1a1a' },
+    //         'lava': { dark: '#d73721', light: '#ffeadb' },
+    //         'ice': { dark: '#87ceeb', light: '#f0ffff' },
+    //         'royal': { dark: '#4b0082', light: '#fffacd' },
+    //         'holographic': { dark: '#ff00ff', light: '#e0ffff' },
+    //         'monochrome-dark': { dark: '#e0e0e0', light: '#212121' }
+    //     };
+    //     return patterns[pattern] || patterns.default;
+    // }
     
     switchQrType(type) {
         this.activeQrType = type;
         this.qrTypeButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
-
         this.inputContainer.querySelectorAll('.input-group').forEach(group => {
             group.style.display = group.dataset.type === type ? 'block' : 'none';
         });
-
         this.generateQRCode();
     }
     
@@ -219,11 +215,14 @@ class QRCodeGenerator {
                     text = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
                 }
                 break;
-            case 'image':
-                text = this.imageData;
-                break;
             case 'video':
                 text = this.videoUrl.value.trim();
+                break;
+            case 'youtube':
+                const youtubeUrlInput = document.getElementById('youtube-url');
+                if (youtubeUrlInput) {
+                    text = youtubeUrlInput.value.trim();
+                }
                 break;
         }
         
@@ -250,8 +249,8 @@ class QRCodeGenerator {
             // Generate QR code
             const canvas = document.createElement('canvas');
             
-            const pattern = this.patternSelect.value;
-            const colors = this.getPatternColors(pattern);
+            // Use default colors (black on white)
+            const colors = { dark: '#000000', light: '#FFFFFF' };
 
             // Use a Promise wrapper to handle the async generation
             await new Promise((resolve, reject) => {
@@ -293,7 +292,7 @@ class QRCodeGenerator {
         } catch (error) {
             console.error('Error generating QR code:', error);
             this.hideLoading();
-            this.showError(error.message || 'Error generating QR code. Please try again.');
+            this.showError('Unable to generate QR code. Please try again.');
         }
     }
     
@@ -520,202 +519,6 @@ class QRCodeGenerator {
         }, 3000);
     }
     
-    // Initialize body patterns functionality
-    initBodyPatterns() {
-        // Pattern selection
-        this.patternItems.forEach(item => {
-            item.addEventListener('click', () => {
-                this.selectPattern(item.dataset.pattern);
-            });
-        });
-
-        // Color type radio buttons
-        this.colorTypeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                this.colorType = e.target.value;
-                this.updateColorPickers();
-                this.updatePatternSelect();
-                this.generateQRCode();
-            });
-        });
-
-        // Color pickers
-        this.primaryColorPicker.addEventListener('change', (e) => {
-            this.primaryColor = e.target.value;
-            this.updatePatternSelect();
-            this.generateQRCode();
-        });
-
-        this.secondaryColorPicker.addEventListener('change', (e) => {
-            this.secondaryColor = e.target.value;
-            this.updatePatternSelect();
-            this.generateQRCode();
-        });
-
-        // Color picker button (for additional functionality)
-        this.colorPickerBtn.addEventListener('click', () => {
-            this.showColorPickerMenu();
-        });
-
-        // Initialize color pickers visibility
-        this.updateColorPickers();
-    }
-
-    selectPattern(pattern) {
-        this.selectedPattern = pattern;
-        
-        // Update visual selection
-        this.patternItems.forEach(item => {
-            item.classList.toggle('active', item.dataset.pattern === pattern);
-        });
-
-        // Update the hidden select element
-        this.patternSelect.value = pattern;
-        
-        // Generate QR code with new pattern
-        this.generateQRCode();
-        
-        this.showNotification(`Pattern "${pattern}" selected`, 'success');
-    }
-
-    updateColorPickers() {
-        if (this.colorType === 'gradient') {
-            this.secondaryColorPicker.style.display = 'block';
-        } else {
-            this.secondaryColorPicker.style.display = 'none';
-        }
-    }
-
-    updatePatternSelect() {
-        // Update the pattern colors based on custom colors if needed
-        if (this.colorType === 'single') {
-            // For single color, use primary color as dark and white as light
-            this.customColors = {
-                dark: this.primaryColor,
-                light: '#ffffff'
-            };
-        } else {
-            // For gradient, use both colors
-            this.customColors = {
-                dark: this.primaryColor,
-                light: this.secondaryColor
-            };
-        }
-    }
-
-    showColorPickerMenu() {
-        // Create a simple color picker menu with preset colors
-        const colors = [
-            '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff',
-            '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080',
-            '#008000', '#000080', '#800000', '#808000', '#008080'
-        ];
-
-        // Remove existing menu if present
-        const existingMenu = document.querySelector('.color-picker-menu');
-        if (existingMenu) {
-            existingMenu.remove();
-            return;
-        }
-
-        const menu = document.createElement('div');
-        menu.className = 'color-picker-menu';
-        menu.style.cssText = `
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            border-radius: 8px;
-            padding: 10px;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        `;
-
-        colors.forEach(color => {
-            const colorBtn = document.createElement('button');
-            colorBtn.style.cssText = `
-                width: 30px;
-                height: 30px;
-                background: ${color};
-                border: 2px solid rgba(0, 255, 255, 0.3);
-                border-radius: 4px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            `;
-            
-            colorBtn.addEventListener('click', () => {
-                this.primaryColor = color;
-                this.primaryColorPicker.value = color;
-                this.updatePatternSelect();
-                this.generateQRCode();
-                menu.remove();
-                this.showNotification(`Color ${color} selected`, 'success');
-            });
-
-            colorBtn.addEventListener('mouseenter', () => {
-                colorBtn.style.borderColor = '#00ffff';
-                colorBtn.style.transform = 'scale(1.1)';
-            });
-
-            colorBtn.addEventListener('mouseleave', () => {
-                colorBtn.style.borderColor = 'rgba(0, 255, 255, 0.3)';
-                colorBtn.style.transform = 'scale(1)';
-            });
-
-            menu.appendChild(colorBtn);
-        });
-
-        // Position menu relative to color picker button
-        this.colorPickerBtn.style.position = 'relative';
-        this.colorPickerBtn.appendChild(menu);
-
-        // Close menu when clicking outside
-        setTimeout(() => {
-            document.addEventListener('click', (e) => {
-                if (!menu.contains(e.target) && e.target !== this.colorPickerBtn) {
-                    menu.remove();
-                }
-            }, { once: true });
-        }, 100);
-    }
-
-    // Override getPatternColors to use custom colors when available
-    getPatternColors(pattern) {
-        if (this.customColors && (this.colorType === 'single' || this.colorType === 'gradient')) {
-            return this.customColors;
-        }
-
-        const patterns = {
-            'default': { dark: '#000000', light: '#FFFFFF' },
-            'cyber': { dark: '#00ffff', light: '#0a0a0a' },
-            'ocean': { dark: '#004d7a', light: '#e0f7fa' },
-            'sunset': { dark: '#c33764', light: '#f8f3d4' },
-            'forest': { dark: '#134e4a', light: '#f0fdf4' },
-            'nebula': { dark: '#4c1d95', light: '#f5f3ff' },
-            'gold': { dark: '#785a28', light: '#fffbeb' },
-            'ruby': { dark: '#9f1239', light: '#fff1f2' },
-            'emerald': { dark: '#065f46', light: '#ecfdf5' },
-            'sapphire': { dark: '#1e40af', light: '#eff6ff' },
-            'mono-light': { dark: '#525252', light: '#f5f5f5' },
-            // Premium Patterns
-            'amethyst': { dark: '#9966cc', light: '#f3e5f5' },
-            'citrine': { dark: '#f4a261', light: '#fff8e1' },
-            'rose-gold': { dark: '#b76e79', light: '#fce4ec' },
-            'midnight': { dark: '#003366', light: '#e1e8f0' },
-            'toxic': { dark: '#7fff00', light: '#1a1a1a' },
-            'lava': { dark: '#d73721', light: '#ffeadb' },
-            'ice': { dark: '#87ceeb', light: '#f0ffff' },
-            'royal': { dark: '#4b0082', light: '#fffacd' },
-            'holographic': { dark: '#ff00ff', light: '#e0ffff' },
-            'monochrome-dark': { dark: '#e0e0e0', light: '#212121' }
-        };
-        return patterns[pattern] || patterns.default;
-    }
-
     // PWA initialization
     initPWA() {
         // Register service worker

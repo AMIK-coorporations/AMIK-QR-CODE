@@ -148,7 +148,8 @@ body {
 #wifi-password,
 #wifi-encryption,
 #image-url,
-#video-url {
+#video-url,
+#youtube-url {
     width: 100%;
     padding: 15px;
     border: 2px solid rgba(0, 255, 255, 0.3);
@@ -173,6 +174,16 @@ body {
 }
 
 #qr-input::placeholder {
+    color: #666;
+}
+
+#youtube-url:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+}
+#youtube-url::placeholder {
     color: #666;
 }
 
@@ -247,194 +258,6 @@ body {
     margin-top: 20px;
     padding: 15px;
     font-size: 18px;
-}
-
-/* Body Patterns Section */
-.body-patterns-section {
-    margin-top: 25px;
-    padding: 20px;
-    background: rgba(0, 255, 255, 0.05);
-    border-radius: 15px;
-    border: 1px solid rgba(0, 255, 255, 0.2);
-}
-
-.body-patterns-section h3 {
-    color: #00ffff;
-    margin-bottom: 20px;
-    font-size: 1.4rem;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-}
-
-.pattern-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.pattern-item {
-    cursor: pointer;
-    border-radius: 10px;
-    padding: 8px;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.pattern-item:hover {
-    border-color: rgba(0, 255, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.2);
-}
-
-.pattern-item.active {
-    border-color: #00ffff;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
-}
-
-.pattern-preview {
-    width: 60px;
-    height: 60px;
-    border-radius: 8px;
-    margin: 0 auto;
-    position: relative;
-    overflow: hidden;
-}
-
-/* QR Pattern Representations */
-.pattern-preview[data-pattern="default"] {
-    background: 
-        radial-gradient(circle at 20% 20%, #000 2px, transparent 2px),
-        radial-gradient(circle at 40% 20%, #000 2px, transparent 2px),
-        radial-gradient(circle at 60% 20%, #000 2px, transparent 2px),
-        radial-gradient(circle at 80% 20%, #000 2px, transparent 2px),
-        radial-gradient(circle at 20% 40%, #000 2px, transparent 2px),
-        radial-gradient(circle at 40% 40%, #000 2px, transparent 2px),
-        radial-gradient(circle at 60% 40%, #000 2px, transparent 2px),
-        radial-gradient(circle at 80% 40%, #000 2px, transparent 2px),
-        radial-gradient(circle at 20% 60%, #000 2px, transparent 2px),
-        radial-gradient(circle at 40% 60%, #000 2px, transparent 2px),
-        radial-gradient(circle at 60% 60%, #000 2px, transparent 2px),
-        radial-gradient(circle at 80% 60%, #000 2px, transparent 2px),
-        radial-gradient(circle at 20% 80%, #000 2px, transparent 2px),
-        radial-gradient(circle at 40% 80%, #000 2px, transparent 2px),
-        radial-gradient(circle at 60% 80%, #000 2px, transparent 2px),
-        radial-gradient(circle at 80% 80%, #000 2px, transparent 2px);
-    background-color: #fff;
-    background-size: 15px 15px;
-}
-
-.pattern-preview[data-pattern="cyber"] {
-    background: 
-        radial-gradient(circle at 20% 20%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 40% 20%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 60% 20%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 80% 20%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 20% 40%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 40% 40%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 60% 40%, #00ffff 2px, transparent 2px),
-        radial-gradient(circle at 80% 40%, #00ffff 2px, transparent 2px);
-    background-color: #0a0a0a;
-    background-size: 15px 15px;
-    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.3);
-}
-
-.pattern-preview[data-pattern="ocean"] {
-    background: 
-        radial-gradient(circle at 25% 25%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 50% 25%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 75% 25%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 25% 50%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 50% 50%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 75% 50%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 25% 75%, #004d7a 2px, transparent 2px),
-        radial-gradient(circle at 50% 75%, #004d7a 2px, transparent 2px);
-    background-color: #e0f7fa;
-    background-size: 20px 20px;
-}
-
-.pattern-preview[data-pattern="sunset"] {
-    background: 
-        linear-gradient(45deg, #c33764 25%, transparent 25%),
-        linear-gradient(-45deg, #c33764 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #c33764 75%),
-        linear-gradient(-45deg, transparent 75%, #c33764 75%);
-    background-color: #f8f3d4;
-    background-size: 12px 12px;
-    background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
-}
-
-.pattern-preview[data-pattern="forest"] {
-    background: 
-        radial-gradient(circle at 30% 30%, #134e4a 3px, transparent 3px),
-        radial-gradient(circle at 70% 30%, #134e4a 2px, transparent 2px),
-        radial-gradient(circle at 30% 70%, #134e4a 2px, transparent 2px),
-        radial-gradient(circle at 70% 70%, #134e4a 3px, transparent 3px);
-    background-color: #f0fdf4;
-    background-size: 18px 18px;
-}
-
-.pattern-preview[data-pattern="nebula"] {
-    background: 
-        radial-gradient(ellipse at center, #4c1d95 30%, transparent 30%),
-        radial-gradient(ellipse at 25% 25%, #4c1d95 20%, transparent 20%),
-        radial-gradient(ellipse at 75% 75%, #4c1d95 25%, transparent 25%);
-    background-color: #f5f3ff;
-    background-size: 16px 16px, 12px 12px, 14px 14px;
-}
-
-.pattern-preview[data-pattern="gold"] {
-    background: 
-        repeating-linear-gradient(45deg, #785a28 0px, #785a28 4px, transparent 4px, transparent 8px),
-        repeating-linear-gradient(-45deg, #785a28 0px, #785a28 4px, transparent 4px, transparent 8px);
-    background-color: #fffbeb;
-}
-
-.pattern-preview[data-pattern="ruby"] {
-    background: 
-        radial-gradient(circle at 20% 20%, #9f1239 2px, transparent 2px),
-        radial-gradient(circle at 60% 20%, #9f1239 3px, transparent 3px),
-        radial-gradient(circle at 20% 60%, #9f1239 3px, transparent 3px),
-        radial-gradient(circle at 60% 60%, #9f1239 2px, transparent 2px);
-    background-color: #fff1f2;
-    background-size: 20px 20px;
-}
-
-.pattern-preview[data-pattern="emerald"] {
-    background: 
-        linear-gradient(90deg, #065f46 50%, transparent 50%),
-        linear-gradient(#065f46 50%, transparent 50%);
-    background-color: #ecfdf5;
-    background-size: 8px 8px;
-}
-
-.pattern-preview[data-pattern="sapphire"] {
-    background: 
-        radial-gradient(circle at 25% 25%, #1e40af 2px, transparent 2px),
-        radial-gradient(circle at 75% 25%, #1e40af 2px, transparent 2px),
-        radial-gradient(circle at 25% 75%, #1e40af 2px, transparent 2px),
-        radial-gradient(circle at 75% 75%, #1e40af 2px, transparent 2px);
-    background-color: #eff6ff;
-    background-size: 16px 16px;
-}
-
-.pattern-preview[data-pattern="amethyst"] {
-    background: 
-        conic-gradient(from 0deg at 50% 50%, #9966cc 0deg, transparent 90deg, #9966cc 180deg, transparent 270deg);
-    background-color: #f3e5f5;
-    background-size: 12px 12px;
-}
-
-.pattern-preview[data-pattern="toxic"] {
-    background: 
-        radial-gradient(circle at 30% 30%, #7fff00 2px, transparent 2px),
-        radial-gradient(circle at 70% 70%, #7fff00 3px, transparent 3px),
-        radial-gradient(circle at 30% 70%, #7fff00 2px, transparent 2px),
-        radial-gradient(circle at 70% 30%, #7fff00 3px, transparent 3px);
-    background-color: #1a1a1a;
-    background-size: 15px 15px;
-    box-shadow: inset 0 0 15px rgba(127, 255, 0, 0.3);
 }
 
 /* Color Options */
@@ -780,16 +603,6 @@ body {
     
     .input-section, .output-section {
         padding: 20px;
-    }
-    
-    .pattern-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-    }
-    
-    .pattern-preview {
-        width: 50px;
-        height: 50px;
     }
     
     .color-type-selector {
