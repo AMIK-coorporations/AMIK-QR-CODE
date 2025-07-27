@@ -565,6 +565,34 @@ body {
     margin-top: 40px;
 }
 
+#install-pwa-container {
+    display: flex;
+    justify-content: center;
+    margin: 18px 0 0 0;
+}
+.install-pwa-btn {
+    background: linear-gradient(90deg, #00ffff 0%, #0080ff 100%);
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    box-shadow: 0 0 18px #00ffff80;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+    outline: none;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px #00ffff80;
+    margin-bottom: 10px;
+    animation: pulse-glow 2s infinite alternate;
+}
+.install-pwa-btn:hover {
+    background: linear-gradient(90deg, #0080ff 0%, #00ffff 100%);
+    color: #fff;
+    box-shadow: 0 0 30px #00ffffcc;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .generator-section {

@@ -676,3 +676,42 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     document.head.appendChild(style);
 });
+
+// Add PWA install button logic
+window.addEventListener('DOMContentLoaded', () => {
+    let deferredPrompt;
+    const installContainer = document.getElementById('install-pwa-container');
+    if (!installContainer) return;
+
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallButton();
+    });
+
+    // Hide the button if app is already installed
+    window.addEventListener('appinstalled', () => {
+        installContainer.innerHTML = '';
+    });
+
+    // If already installed, don't show the button
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        installContainer.innerHTML = '';
+    }
+
+    function showInstallButton() {
+        installContainer.innerHTML = '<button class="install-pwa-btn">Install App</button>';
+        const btn = installContainer.querySelector('.install-pwa-btn');
+        btn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installContainer.innerHTML = '';
+                }
+                deferredPrompt = null;
+            }
+        });
+    }
+});
