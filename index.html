@@ -34,9 +34,21 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
+            <a href="https://amik-ai-agent.vercel.app" target="_blank" rel="noopener" class="ai-agent-btn">AMIK AI AGENT</a>
             <div class="logo">
                 <img src="icon.svg" alt="AMIK QR CODE" class="logo-icon">
                 <h1 class="logo-text">AMIK QR CODE</h1>
+            </div>
+            <div class="header-icons">
+                <button id="scan-btn" class="scan-btn" title="Scan QR/Barcode">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
+                      <rect x="15" y="3" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
+                      <rect x="3" y="15" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
+                      <path d="M17 17L21 21" stroke="#00ffff" stroke-width="2" stroke-linecap="round"/>
+                      <circle cx="15" cy="15" r="3" stroke="#00ffff" stroke-width="2"/>
+                    </svg>
+                </button>
             </div>
             <div id="install-pwa-container"></div>
         </header>
@@ -82,7 +94,7 @@
                         <!-- YouTube Input -->
                         <div class="input-group" data-type="youtube" style="display: none;">
                             <label for="youtube-url">YouTube Video or Channel URL:</label>
-                            <input type="url" id="youtube-url" placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/@channel">
+                            <input type="url" id="youtube-url" placeholder="YouTube video or channel URL">
                         </div>
 
                         <!-- Video Input -->
@@ -163,11 +175,24 @@
             </div>
         </main>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <p>&copy; 2025 AMIK QR CODE - Progressive Web App</p>
-            <p>Installable • Offline Ready • Futuristic Design</p>
-        </footer>
+    </div>
+
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="scanner-modal" style="display:none;">
+        <div class="scanner-modal-content">
+            <button id="close-scanner" class="close-scanner">&times;</button>
+            <div id="qr-reader" style="width:100%;"></div>
+            <div id="scan-result" class="scan-result"></div>
+        </div>
+    </div>
+
+    <!-- Records Modal -->
+    <div id="records-modal" class="records-modal" style="display:none;">
+        <div class="records-modal-content">
+            <button id="close-records" class="close-records">&times;</button>
+            <h2>Your QR Code Records</h2>
+            <div id="records-list" class="records-list"></div>
+        </div>
     </div>
 
     <script src="script.js"></script>
