@@ -715,3 +715,46 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// QR/Barcode Scanner logic
+(function() {
+    let html5QrScriptLoaded = false;
+    function loadHtml5QrScript(callback) {
+        if (html5QrScriptLoaded) return callback();
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js';
+        script.onload = () => { html5QrScriptLoaded = true; callback(); };
+        document.body.appendChild(script);
+    }
+    const scanBtn = document.getElementById('scan-btn');
+    const scannerModal = document.getElementById('scanner-modal');
+    const closeScanner = document.getElementById('close-scanner');
+    const qrReader = document.getElementById('qr-reader');
+    const scanResult = document.getElementById('scan-result');
+    let html5Qr;
+    if (scanBtn && scannerModal && closeScanner && qrReader) {
+        scanBtn.addEventListener('click', () => {
+            scannerModal.style.display = 'flex';
+            scanResult.textContent = '';
+            loadHtml5QrScript(() => {
+                if (html5Qr) html5Qr.clear();
+                html5Qr = new window.Html5Qrcode('qr-reader');
+                html5Qr.start(
+                    { facingMode: 'environment' },
+                    { fps: 15, qrbox: 220, aspectRatio: 1 },
+                    (decodedText, decodedResult) => {
+                        scanResult.textContent = decodedText;
+                        html5Qr.stop();
+                    },
+                    (error) => {}
+                ).catch(err => {
+                    scanResult.textContent = 'Camera error: ' + err;
+                });
+            });
+        });
+        closeScanner.addEventListener('click', () => {
+            scannerModal.style.display = 'none';
+            if (html5Qr) html5Qr.stop().catch(()=>{});
+        });
+    }
+})();

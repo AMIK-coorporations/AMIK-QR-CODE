@@ -1,6 +1,6 @@
 {
   "name": "AMIK QR CODE",
-  "short_name": "AMIK QR",
+  "short_name": "AMIK QR CODE",
   "description": "Futuristic QR Code Generator - Create QR codes instantly with a modern interface",
   "start_url": "/",
   "display": "standalone",
