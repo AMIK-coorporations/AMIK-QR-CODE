@@ -602,6 +602,361 @@ class QRCodeGenerator {
     }
 }
 
+// QR Code Records Management - Separate class to avoid modifying existing code
+class QRCodeRecords {
+    constructor() {
+        this.records = JSON.parse(localStorage.getItem('qrCodeRecords')) || [];
+        this.recordsBtn = document.getElementById('records-btn');
+        this.recordsModal = document.getElementById('records-modal');
+        this.closeRecords = document.getElementById('close-records');
+        this.recordsList = document.getElementById('records-list');
+        
+        this.initRecords();
+        this.trackExistingActions();
+        this.trackScans();
+    }
+    
+    initRecords() {
+        if (this.recordsBtn) {
+            this.recordsBtn.addEventListener('click', () => this.showRecords());
+        }
+        if (this.closeRecords) {
+            this.closeRecords.addEventListener('click', () => this.hideRecords());
+        }
+        if (this.recordsModal) {
+            this.recordsModal.addEventListener('click', (e) => {
+                if (e.target === this.recordsModal) {
+                    this.hideRecords();
+                }
+            });
+        }
+    }
+    
+    trackExistingActions() {
+        // Track existing download and copy buttons without modifying their original code
+        const downloadBtn = document.getElementById('download-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        
+        if (downloadBtn) {
+            const originalDownload = downloadBtn.onclick;
+            downloadBtn.addEventListener('click', () => {
+                this.addRecordAction('downloaded');
+            });
+        }
+        
+        if (copyBtn) {
+            const originalCopy = copyBtn.onclick;
+            copyBtn.addEventListener('click', () => {
+                this.addRecordAction('copied');
+            });
+        }
+    }
+    
+    trackScans() {
+        // Track QR code scans from the scanner functionality
+        const scanResult = document.getElementById('scan-result');
+        if (scanResult) {
+            // Create a MutationObserver to watch for scan results
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList' && mutation.target.textContent.trim()) {
+                        const scannedContent = mutation.target.textContent.trim();
+                        this.addScanRecord(scannedContent);
+                    }
+                });
+            });
+            
+            observer.observe(scanResult, { childList: true, subtree: true });
+        }
+    }
+    
+    addScanRecord(scannedContent) {
+        // Check if this content matches any existing record
+        const existingRecord = this.records.find(r => r.content === scannedContent);
+        
+        if (existingRecord) {
+            // Update existing record with scan
+            existingRecord.actions.scanned = true;
+            existingRecord.scanCount = (existingRecord.scanCount || 0) + 1;
+            existingRecord.lastScanned = new Date().toISOString();
+        } else {
+            // Create new record for scanned content
+            const recordData = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                content: scannedContent,
+                type: this.detectContentType(scannedContent),
+                category: this.detectCategory(scannedContent),
+                size: '300',
+                actions: {
+                    downloaded: false,
+                    copied: false,
+                    scanned: true
+                },
+                scanCount: 1,
+                lastScanned: new Date().toISOString(),
+                qrImage: null
+            };
+            this.records.unshift(recordData);
+        }
+        
+        this.saveRecords();
+    }
+    
+    detectContentType(content) {
+        if (content.startsWith('WIFI:')) return 'wifi';
+        if (content.includes('youtube.com') || content.includes('youtu.be')) return 'youtube';
+        if (content.match(/\.(mp4|avi|mov|wmv|flv|webm)$/i)) return 'video';
+        if (content.match(/^https?:\/\//)) return 'url';
+        return 'text';
+    }
+    
+    detectCategory(content) {
+        const type = this.detectContentType(content);
+        const categoryMap = {
+            'text': 'Text/URL',
+            'url': 'Text/URL',
+            'wifi': 'WiFi',
+            'youtube': 'YouTube',
+            'video': 'Video'
+        };
+        return categoryMap[type] || 'Text/URL';
+    }
+    
+    addRecordAction(action) {
+        // Get current QR code data
+        const qrInput = document.getElementById('qr-input');
+        const qrSize = document.getElementById('qr-size');
+        const activeTypeBtn = document.querySelector('.qr-type-btn.active');
+        
+        if (!qrInput || !qrInput.value.trim()) return;
+        
+        const recordData = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            content: this.getCurrentContent(),
+            type: activeTypeBtn ? activeTypeBtn.dataset.type : 'text',
+            category: this.getCurrentCategory(),
+            size: qrSize ? qrSize.value : '300',
+            actions: {
+                downloaded: action === 'downloaded',
+                copied: action === 'copied',
+                scanned: false
+            },
+            scanCount: 0,
+            qrImage: this.getCurrentQRImage()
+        };
+        
+        // Check if record already exists
+        const existingRecord = this.records.find(r => r.content === recordData.content);
+        if (existingRecord) {
+            existingRecord.actions[action] = true;
+            existingRecord.timestamp = recordData.timestamp;
+        } else {
+            this.records.unshift(recordData);
+        }
+        
+        this.saveRecords();
+    }
+    
+    getCurrentContent() {
+        const qrInput = document.getElementById('qr-input');
+        const wifiSsid = document.getElementById('wifi-ssid');
+        const wifiPassword = document.getElementById('wifi-password');
+        const wifiEncryption = document.getElementById('wifi-encryption');
+        const youtubeUrl = document.getElementById('youtube-url');
+        const videoUrl = document.getElementById('video-url');
+        const activeTypeBtn = document.querySelector('.qr-type-btn.active');
+        
+        if (!activeTypeBtn) return qrInput ? qrInput.value : '';
+        
+        switch (activeTypeBtn.dataset.type) {
+            case 'text':
+                return qrInput ? qrInput.value : '';
+            case 'wifi':
+                return `WIFI:S:${wifiSsid ? wifiSsid.value : ''};T:${wifiEncryption ? wifiEncryption.value : 'WPA'};P:${wifiPassword ? wifiPassword.value : ''};;`;
+            case 'youtube':
+                return youtubeUrl ? youtubeUrl.value : '';
+            case 'video':
+                return videoUrl ? videoUrl.value : '';
+            default:
+                return qrInput ? qrInput.value : '';
+        }
+    }
+    
+    getCurrentCategory() {
+        const activeTypeBtn = document.querySelector('.qr-type-btn.active');
+        if (!activeTypeBtn) return 'Text/URL';
+        
+        const categoryMap = {
+            'text': 'Text/URL',
+            'wifi': 'WiFi',
+            'youtube': 'YouTube',
+            'video': 'Video'
+        };
+        return categoryMap[activeTypeBtn.dataset.type] || 'Text/URL';
+    }
+    
+    getCurrentQRImage() {
+        const qrImage = document.querySelector('#qr-container img');
+        return qrImage ? qrImage.src : null;
+    }
+    
+    saveRecords() {
+        localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+    }
+    
+    showRecords() {
+        this.renderRecords();
+        this.recordsModal.style.display = 'flex';
+    }
+    
+    hideRecords() {
+        this.recordsModal.style.display = 'none';
+    }
+    
+    renderRecords() {
+        if (!this.recordsList) return;
+        
+        if (this.records.length === 0) {
+            this.recordsList.innerHTML = `
+                <div class="record-item" style="text-align: center; color: #666;">
+                    <p>No QR codes generated yet</p>
+                    <p>Generate your first QR code to see it here!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        this.recordsList.innerHTML = this.records.map(record => `
+            <div class="record-item">
+                <div class="record-header">
+                    <strong>${this.getCategoryIcon(record.category)} ${record.category}</strong>
+                    <span class="record-date">${this.formatDate(record.timestamp)}</span>
+                </div>
+                <div class="record-content">
+                    <p><strong>Content:</strong> ${this.truncateText(record.content, 50)}</p>
+                    <p><strong>Type:</strong> ${record.type}</p>
+                    <p><strong>Size:</strong> ${record.size}x${record.size}</p>
+                    <p><strong>Scans:</strong> ${record.scanCount || 0} times</p>
+                    ${record.lastScanned ? `<p><strong>Last Scanned:</strong> ${this.formatDate(record.lastScanned)}</p>` : ''}
+                </div>
+                <div class="record-actions">
+                    <span class="action-badge ${record.actions.downloaded ? 'completed' : ''}" title="Downloaded">
+                        📥 Download
+                    </span>
+                    <span class="action-badge ${record.actions.copied ? 'completed' : ''}" title="Copied">
+                        📋 Copy
+                    </span>
+                    <span class="action-badge ${record.actions.scanned ? 'completed' : ''}" title="Scanned">
+                        📱 Scan (${record.scanCount || 0})
+                    </span>
+                </div>
+                <div class="record-buttons">
+                    <button class="btn-secondary" onclick="qrRecords.copyContent('${record.id}')">
+                        Copy Content
+                    </button>
+                    <button class="btn-secondary" onclick="qrRecords.regenerateQR('${record.id}')">
+                        Regenerate
+                    </button>
+                    <button class="btn-secondary" onclick="qrRecords.deleteRecord('${record.id}')">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    getCategoryIcon(category) {
+        const icons = {
+            'Text/URL': '📝',
+            'WiFi': '📶',
+            'YouTube': '📺',
+            'Video': '🎥'
+        };
+        return icons[category] || '📄';
+    }
+    
+    formatDate(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+    
+    truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+    
+    copyContent(recordId) {
+        const record = this.records.find(r => r.id === recordId);
+        if (record) {
+            navigator.clipboard.writeText(record.content).then(() => {
+                this.updateRecordAction(recordId, 'copied');
+                this.showNotification('Content copied to clipboard!');
+                this.renderRecords();
+            });
+        }
+    }
+    
+    regenerateQR(recordId) {
+        const record = this.records.find(r => r.id === recordId);
+        if (record) {
+            // Fill the form with the record data
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.value = record.content;
+            }
+            // Trigger QR generation
+            const generateBtn = document.getElementById('generate-btn');
+            if (generateBtn) {
+                generateBtn.click();
+            }
+            this.hideRecords();
+        }
+    }
+    
+    updateRecordAction(recordId, action) {
+        const record = this.records.find(r => r.id === recordId);
+        if (record) {
+            record.actions[action] = true;
+            this.saveRecords();
+        }
+    }
+    
+    deleteRecord(recordId) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            this.records = this.records.filter(r => r.id !== recordId);
+            this.saveRecords();
+            this.renderRecords();
+            this.showNotification('Record deleted!');
+        }
+    }
+    
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+            font-weight: 600;
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+}
+
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Wait for QRCode library to load or fallback to activate
@@ -758,3 +1113,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 })();
+
+// Initialize QR Code Records when DOM is loaded
+let qrRecords;
+document.addEventListener('DOMContentLoaded', () => {
+    qrRecords = new QRCodeRecords();
+});
