@@ -16,14 +16,13 @@ class QRCodeGenerator {
         this.inputContainer = document.getElementById('input-container');
         this.generateBtn = document.getElementById('generate-btn');
 
-        // Image fields
-        this.imageDropZone = document.getElementById('image-drop-zone');
-        this.imageFile = document.getElementById('image-file');
-        this.imagePreviewContainer = document.getElementById('image-preview-container');
-        this.imagePreview = document.getElementById('image-preview');
-        this.removeImageBtn = document.getElementById('remove-image-btn');
-        // Remove patternSelect and pattern-related fields
-        // Body patterns elements
+        // Image fields - check if elements exist before assigning
+        this.imageDropZone = document.getElementById('image-drop-zone') || null;
+        this.imageFile = document.getElementById('image-file') || null;
+        this.imagePreviewContainer = document.getElementById('image-preview-container') || null;
+        this.imagePreview = document.getElementById('image-preview') || null;
+        this.removeImageBtn = document.getElementById('remove-image-btn') || null;
+        
         this.patternItems = document.querySelectorAll('.pattern-item');
         this.primaryColorPicker = document.getElementById('primary-color');
         this.secondaryColorPicker = document.getElementById('secondary-color');
@@ -46,8 +45,7 @@ class QRCodeGenerator {
         this.colorType = 'single';
         this.primaryColor = '#000000';
         this.secondaryColor = '#ffffff';
-        this.deferredPrompt = null; // For PWA installation
-        
+
         this.init();
     }
     
@@ -65,17 +63,18 @@ class QRCodeGenerator {
             btn.addEventListener('click', () => this.switchQrType(btn.dataset.type));
         });
 
-        // Image drag and drop
-        this.imageDropZone.addEventListener('click', () => this.imageFile.click());
-        this.imageDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
-        this.imageDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-        this.imageDropZone.addEventListener('drop', (e) => this.handleDrop(e));
-        this.imageFile.addEventListener('change', (e) => this.handleImageFile(e.target.files[0]));
-        this.removeImageBtn.addEventListener('click', () => this.removeImage());
-        // Remove patternSelect event listener in init()
+        // Image drag and drop - only add listeners if elements exist
+        if (this.imageDropZone && this.imageFile) {
+            this.imageDropZone.addEventListener('click', () => this.imageFile.click());
+            this.imageDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
+            this.imageDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            this.imageDropZone.addEventListener('drop', (e) => this.handleDrop(e));
+            this.imageFile.addEventListener('change', (e) => this.handleImageFile(e.target.files[0]));
+        }
         
-        // PWA installation handling
-        this.initPWA();
+        if (this.removeImageBtn) {
+            this.removeImageBtn.addEventListener('click', () => this.removeImage());
+        }
         
         // Focus on input
         this.qrInput.focus();
@@ -195,10 +194,14 @@ class QRCodeGenerator {
         this.qrTypeButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
-        this.inputContainer.querySelectorAll('.input-group').forEach(group => {
-            group.style.display = group.dataset.type === type ? 'block' : 'none';
-        });
-        this.generateQRCode();
+
+        // Show/hide relevant input fields
+        this.qrInput.style.display = type === 'text' ? 'block' : 'none';
+        this.wifiSsid.parentElement.style.display = type === 'wifi' ? 'block' : 'none';
+        this.videoUrl.parentElement.style.display = type === 'video' ? 'block' : 'none';
+
+        // Clear input fields when switching types
+        this.clearInput();
     }
     
     async generateQRCode() {
@@ -537,10 +540,9 @@ class QRCodeGenerator {
         
         // Handle PWA installation prompt
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('PWA install prompt triggered');
             e.preventDefault();
-            this.deferredPrompt = e;
-            this.showInstallButton();
+            deferredPrompt = e;
+            installModal.style.display = 'block';
         });
         
         // Handle successful installation
@@ -605,7 +607,7 @@ class QRCodeGenerator {
 // QR Code Records Management - Separate class to avoid modifying existing code
 class QRCodeRecords {
     constructor() {
-        this.records = JSON.parse(localStorage.getItem('qrCodeRecords')) || [];
+        this.records = [];
         this.recordsBtn = document.getElementById('records-btn');
         this.recordsModal = document.getElementById('records-modal');
         this.closeRecords = document.getElementById('close-records');
@@ -614,6 +616,7 @@ class QRCodeRecords {
         this.initRecords();
         this.trackExistingActions();
         this.trackScans();
+        this.loadRecordsFromFirebase();
     }
     
     initRecords() {
@@ -639,15 +642,15 @@ class QRCodeRecords {
         
         if (downloadBtn) {
             const originalDownload = downloadBtn.onclick;
-            downloadBtn.addEventListener('click', () => {
-                this.addRecordAction('downloaded');
+            downloadBtn.addEventListener('click', async () => {
+                await this.addRecordAction('downloaded');
             });
         }
         
         if (copyBtn) {
             const originalCopy = copyBtn.onclick;
-            copyBtn.addEventListener('click', () => {
-                this.addRecordAction('copied');
+            copyBtn.addEventListener('click', async () => {
+                await this.addRecordAction('copied');
             });
         }
     }
@@ -658,10 +661,10 @@ class QRCodeRecords {
         if (scanResult) {
             // Create a MutationObserver to watch for scan results
             const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
+                mutations.forEach(async (mutation) => {
                     if (mutation.type === 'childList' && mutation.target.textContent.trim()) {
                         const scannedContent = mutation.target.textContent.trim();
-                        this.addScanRecord(scannedContent);
+                        await this.addScanRecord(scannedContent);
                     }
                 });
             });
@@ -670,7 +673,7 @@ class QRCodeRecords {
         }
     }
     
-    addScanRecord(scannedContent) {
+    async addScanRecord(scannedContent) {
         // Check if this content matches any existing record
         const existingRecord = this.records.find(r => r.content === scannedContent);
         
@@ -679,10 +682,22 @@ class QRCodeRecords {
             existingRecord.actions.scanned = true;
             existingRecord.scanCount = (existingRecord.scanCount || 0) + 1;
             existingRecord.lastScanned = new Date().toISOString();
+            
+            // Update in Firebase if it has a Firebase ID
+            if (existingRecord.firebaseId) {
+                try {
+                    await this.updateRecordInFirebase(existingRecord.firebaseId, {
+                        actions: existingRecord.actions,
+                        scanCount: existingRecord.scanCount,
+                        lastScanned: existingRecord.lastScanned
+                    });
+                } catch (error) {
+                    console.error('Error updating scan record in Firebase:', error);
+                }
+            }
         } else {
             // Create new record for scanned content
             const recordData = {
-                id: Date.now(),
                 timestamp: new Date().toISOString(),
                 content: scannedContent,
                 type: this.detectContentType(scannedContent),
@@ -697,10 +712,23 @@ class QRCodeRecords {
                 lastScanned: new Date().toISOString(),
                 qrImage: null
             };
+            
+            try {
+                // Save to Firebase first
+                const firebaseId = await this.saveRecordToFirebase(recordData);
+                recordData.id = firebaseId;
+                recordData.firebaseId = firebaseId;
+            } catch (error) {
+                console.error('Error saving scan record to Firebase:', error);
+                // Fallback to local ID
+                recordData.id = Date.now();
+            }
+            
             this.records.unshift(recordData);
         }
         
-        this.saveRecords();
+        // Save to localStorage as backup
+        localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
     }
     
     detectContentType(content) {
@@ -723,7 +751,7 @@ class QRCodeRecords {
         return categoryMap[type] || 'Text/URL';
     }
     
-    addRecordAction(action) {
+    async addRecordAction(action) {
         // Get current QR code data
         const qrInput = document.getElementById('qr-input');
         const qrSize = document.getElementById('qr-size');
@@ -732,7 +760,6 @@ class QRCodeRecords {
         if (!qrInput || !qrInput.value.trim()) return;
         
         const recordData = {
-            id: Date.now(),
             timestamp: new Date().toISOString(),
             content: this.getCurrentContent(),
             type: activeTypeBtn ? activeTypeBtn.dataset.type : 'text',
@@ -752,11 +779,38 @@ class QRCodeRecords {
         if (existingRecord) {
             existingRecord.actions[action] = true;
             existingRecord.timestamp = recordData.timestamp;
+            
+            // Update in Firebase if it has a Firebase ID
+            if (existingRecord.firebaseId) {
+                try {
+                    await this.updateRecordInFirebase(existingRecord.firebaseId, {
+                        actions: existingRecord.actions,
+                        timestamp: existingRecord.timestamp
+                    });
+                } catch (error) {
+                    console.error('Error updating record action in Firebase:', error);
+                }
+            }
+            
+            // Update localStorage
+            localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         } else {
+            try {
+                // Save to Firebase first
+                const firebaseId = await this.saveRecordToFirebase(recordData);
+                recordData.id = firebaseId;
+                recordData.firebaseId = firebaseId;
+            } catch (error) {
+                console.error('Error saving record to Firebase:', error);
+                // Fallback to local ID
+                recordData.id = Date.now();
+            }
+            
             this.records.unshift(recordData);
         }
         
-        this.saveRecords();
+        // Save to localStorage as backup
+        localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
     }
     
     getCurrentContent() {
@@ -802,8 +856,74 @@ class QRCodeRecords {
         return qrImage ? qrImage.src : null;
     }
     
-    saveRecords() {
-        localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+    async loadRecordsFromFirebase() {
+        try {
+            const { collection, getDocs } = window.firebaseServices;
+            const querySnapshot = await getDocs(collection(window.firebaseDB, 'qrRecords'));
+            this.records = [];
+            querySnapshot.forEach((doc) => {
+                const record = { id: doc.id, ...doc.data() };
+                this.records.push(record);
+            });
+            // Sort by timestamp (newest first)
+            this.records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        } catch (error) {
+            console.error('Error loading records from Firebase:', error);
+            // Fallback to localStorage if Firebase fails
+            this.records = JSON.parse(localStorage.getItem('qrCodeRecords')) || [];
+        }
+    }
+
+    async saveRecords() {
+        try {
+            const { collection, addDoc } = window.firebaseServices;
+            // Save to Firebase
+            const recordData = this.records[0]; // Save the most recent record
+            if (recordData && !recordData.firebaseId) {
+                const docRef = await addDoc(collection(window.firebaseDB, 'qrRecords'), recordData);
+                // Update the record with Firebase ID
+                recordData.firebaseId = docRef.id;
+            }
+            // Also save to localStorage as backup
+            localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+        } catch (error) {
+            console.error('Error saving to Firebase:', error);
+            // Fallback to localStorage only
+            localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+        }
+    }
+
+    async saveRecordToFirebase(recordData) {
+        try {
+            const { collection, addDoc } = window.firebaseServices;
+            const docRef = await addDoc(collection(window.firebaseDB, 'qrRecords'), recordData);
+            return docRef.id;
+        } catch (error) {
+            console.error('Error saving record to Firebase:', error);
+            throw error;
+        }
+    }
+
+    async updateRecordInFirebase(recordId, updates) {
+        try {
+            const { doc, updateDoc } = window.firebaseServices;
+            const recordRef = doc(window.firebaseDB, 'qrRecords', recordId);
+            await updateDoc(recordRef, updates);
+        } catch (error) {
+            console.error('Error updating record in Firebase:', error);
+            throw error;
+        }
+    }
+
+    async deleteRecordFromFirebase(recordId) {
+        try {
+            const { doc, deleteDoc } = window.firebaseServices;
+            const recordRef = doc(window.firebaseDB, 'qrRecords', recordId);
+            await deleteDoc(recordRef);
+        } catch (error) {
+            console.error('Error deleting record from Firebase:', error);
+            throw error;
+        }
     }
     
     showRecords() {
@@ -887,14 +1007,18 @@ class QRCodeRecords {
         return text.substring(0, maxLength) + '...';
     }
     
-    copyContent(recordId) {
+    async copyContent(recordId) {
         const record = this.records.find(r => r.id === recordId);
         if (record) {
-            navigator.clipboard.writeText(record.content).then(() => {
-                this.updateRecordAction(recordId, 'copied');
+            try {
+                await navigator.clipboard.writeText(record.content);
+                await this.updateRecordAction(recordId, 'copied');
                 this.showNotification('Content copied to clipboard!');
                 this.renderRecords();
-            });
+            } catch (error) {
+                console.error('Error copying content:', error);
+                this.showNotification('Error copying content to clipboard');
+            }
         }
     }
     
@@ -915,20 +1039,49 @@ class QRCodeRecords {
         }
     }
     
-    updateRecordAction(recordId, action) {
+    async updateRecordAction(recordId, action) {
         const record = this.records.find(r => r.id === recordId);
         if (record) {
             record.actions[action] = true;
-            this.saveRecords();
+            
+            // Update in Firebase if it has a Firebase ID
+            if (record.firebaseId) {
+                try {
+                    await this.updateRecordInFirebase(record.firebaseId, {
+                        actions: record.actions
+                    });
+                } catch (error) {
+                    console.error('Error updating record action in Firebase:', error);
+                }
+            }
+            
+            // Update localStorage
+            localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         }
     }
     
-    deleteRecord(recordId) {
+    async deleteRecord(recordId) {
         if (confirm('Are you sure you want to delete this record?')) {
-            this.records = this.records.filter(r => r.id !== recordId);
-            this.saveRecords();
-            this.renderRecords();
-            this.showNotification('Record deleted!');
+            const record = this.records.find(r => r.id === recordId);
+            if (record) {
+                // Delete from Firebase if it has a Firebase ID
+                if (record.firebaseId) {
+                    try {
+                        await this.deleteRecordFromFirebase(record.firebaseId);
+                    } catch (error) {
+                        console.error('Error deleting record from Firebase:', error);
+                    }
+                }
+                
+                // Remove from local records
+                this.records = this.records.filter(r => r.id !== recordId);
+                
+                // Update localStorage
+                localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+                
+                this.renderRecords();
+                this.showNotification('Record deleted!');
+            }
         }
     }
     
@@ -1034,20 +1187,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Add PWA install button logic
 window.addEventListener('DOMContentLoaded', () => {
+    // PWA Installation Handling
     let deferredPrompt;
-    const installContainer = document.getElementById('install-pwa-container');
-    if (!installContainer) return;
-
-    // Listen for the beforeinstallprompt event
+    const installModal = document.getElementById('install-modal');
+    const closeModal = document.querySelector('.close-modal');
+    
+    // Modal Event Listeners
+    closeModal.addEventListener('click', () => {
+        installModal.style.display = 'none';
+    });
+    
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        showInstallButton();
+        installModal.style.display = 'block';
     });
-
-    // Hide the button if app is already installed
+    
+    document.getElementById('modal-install-btn').addEventListener('click', async () => {
+        installModal.style.display = 'none';
+        if(deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if(outcome === 'accepted') {
+                console.log('PWA installed');
+            }
+            deferredPrompt = null;
+        }
+    });
+    
+    // Check if app is already installed
     window.addEventListener('appinstalled', () => {
-        installContainer.innerHTML = '';
+        installModal.style.display = 'none';
+        deferredPrompt = null;
     });
 
     // If already installed, don't show the button
@@ -1109,13 +1280,29 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         closeScanner.addEventListener('click', () => {
             scannerModal.style.display = 'none';
-            if (html5Qr) html5Qr.stop().catch(()=>{});
+            if (html5Qr) html5Qr.stop().catch() => {};
         });
     }
 })();
 
 // Initialize QR Code Records when DOM is loaded
 let qrRecords;
-document.addEventListener('DOMContentLoaded', () => {
-    qrRecords = new QRCodeRecords();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Firebase to be available
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    const waitForFirebase = () => {
+        if (window.firebaseDB && window.firebaseServices) {
+            qrRecords = new QRCodeRecords();
+        } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(waitForFirebase, 100);
+        } else {
+            console.warn('Firebase not available, initializing with fallback');
+            qrRecords = new QRCodeRecords();
+        }
+    };
+    
+    waitForFirebase();
 });

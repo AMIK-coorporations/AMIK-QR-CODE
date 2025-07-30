@@ -29,24 +29,29 @@ body {
     margin-bottom: 40px;
     padding: 20px 0;
     position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 .header .header-icons {
-    position: absolute;
-    top: 0px;
-    right: 128px;
     display: flex;
     gap: 16px;
     z-index: 20;
+    margin-right: 20px;
 }
 @media (max-width: 600px) {
     .header .header-icons {
-        top: 0px;
-        right: 64px;
         gap: 8px;
+        margin-right: 10px;
     }
 }
 .records-btn, .scan-btn {
-    /* Remove position: static and margin: 0; */
+    /* Common styles for both buttons */
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .logo {
@@ -54,7 +59,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 10px;
+    margin: 0 auto;
 }
 
 .logo-icon {
@@ -470,6 +475,41 @@ body {
     position: relative;
 }
 
+/* Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  animation: fadeIn 0.3s;
+}
+
+.modal-content {
+  position: relative;
+  background: #fff;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 12px;
+  margin: 15% auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.close-modal {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
 .qr-container {
     border-radius: 15px;
     padding: 20px;
@@ -558,22 +598,7 @@ body {
     flex-wrap: wrap;
 }
 
-/* Install Button */
-.install-btn {
-    margin-left: 20px;
-    font-size: 14px;
-    padding: 10px 20px;
-    animation: pulse-glow 2s ease-in-out infinite;
-}
 
-@keyframes pulse-glow {
-    0%, 100% { 
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-    }
-    50% { 
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
-    }
-}
 
 /* Footer */
 .footer {
@@ -584,18 +609,7 @@ body {
     margin-top: 40px;
 }
 
-#install-pwa-container {
-    display: flex;
-    justify-content: center;
-    margin: 18px 0 0 0;
-}
-.install-pwa-btn {
-    background: linear-gradient(90deg, #00ffff 0%, #0080ff 100%);
-    color: #0a0a0a;
-    font-weight: 700;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 30px;
+
     padding: 12px 32px;
     box-shadow: 0 0 18px #00ffff80;
     cursor: pointer;
@@ -603,7 +617,6 @@ body {
     outline: none;
     letter-spacing: 1px;
     text-shadow: 0 0 10px #00ffff80;
-    margin-bottom: 10px;
     animation: pulse-glow 2s infinite alternate;
 }
 .install-pwa-btn:hover {
@@ -782,14 +795,9 @@ body {
 }
 
 .scan-btn {
-    position: absolute;
-    top: 32px;
-    left: 32px;
-    right: auto;
     background: rgba(0,255,255,0.08);
     border: none;
     border-radius: 50%;
-    padding: 8px;
     cursor: pointer;
     box-shadow: 0 0 12px #00ffff80;
     transition: background 0.2s, box-shadow 0.2s;
@@ -853,11 +861,9 @@ body {
     text-align: center;
 }
 @media (max-width: 600px) {
-    .scan-btn {
-        top: 16px;
-        left: 16px;
-        right: auto;
-        padding: 6px;
+    .scan-btn, .records-btn {
+        width: 40px;
+        height: 40px;
     }
     .scanner-modal-content {
         padding: 10px 4px 8px 4px;
@@ -869,9 +875,6 @@ body {
 }
 
 .ai-agent-btn {
-    position: absolute;
-    top: 28px;
-    left: 28px;
     background: linear-gradient(90deg, #00ffff 0%, #0080ff 100%);
     color: #0a0a0a;
     font-weight: 700;
@@ -888,6 +891,7 @@ body {
     z-index: 20;
     outline: none;
     display: inline-block;
+    margin-left: 20px;
 }
 .ai-agent-btn:hover {
     background: linear-gradient(90deg, #0080ff 0%, #00ffff 100%);
@@ -896,26 +900,22 @@ body {
 }
 @media (max-width: 600px) {
     .ai-agent-btn {
-        top: 10px;
-        left: 10px;
         font-size: 0.95rem;
         padding: 8px 14px;
+        margin-left: 10px;
     }
+    
+
 }
 
 .records-btn {
-    position: absolute;
-    top: 32px;
-    right: 76px;
     background: rgba(0,255,255,0.08);
     border: none;
     border-radius: 50%;
-    padding: 8px;
     cursor: pointer;
     box-shadow: 0 0 12px #00ffff80;
     transition: background 0.2s, box-shadow 0.2s;
     z-index: 10;
-    margin-right: -60px;
 }
 .records-btn:hover {
     background: rgba(0,255,255,0.18);
@@ -992,11 +992,6 @@ body {
     color: #00ffff;
 }
 @media (max-width: 600px) {
-    .records-btn {
-        top: 10px;
-        right: 54px;
-        padding: 6px;
-    }
     .records-modal-content {
         padding: 10px 4px 8px 4px;
         max-width: 98vw;

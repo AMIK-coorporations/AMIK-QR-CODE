@@ -41,13 +41,13 @@
             </div>
             <div class="header-icons">
                 <button id="records-btn" class="records-btn" title="QR Code Records">
-                    <svg width="35" height="35" viewBox="0 0 24 24" fill="none">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" stroke="#00ffff" stroke-width="2"/>
                       <path d="M12 6v6l4 2" stroke="#00ffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
                 <button id="scan-btn" class="scan-btn" title="Scan QR/Barcode">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <rect x="3" y="3" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
                       <rect x="15" y="3" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
                       <rect x="3" y="15" width="6" height="6" rx="1.5" stroke="#00ffff" stroke-width="2"/>
@@ -56,8 +56,16 @@
                     </svg>
                 </button>
             </div>
-            <div id="install-pwa-container"></div>
         </header>
+
+<div id="install-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h3>Install AMIK QR Generator</h3>
+    <p>Get quick access to our QR generator!</p>
+    <button id="modal-install-btn" class="install-pwa-btn">Install App</button>
+  </div>
+</div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -201,7 +209,8 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="script.js"></script>
     <script src="qrcode.min.js"></script>
 </body>
 </html>

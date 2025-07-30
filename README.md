@@ -51,3 +51,21 @@ This is your complete QR code generator app that works like a mobile app. It cre
 - Canvas-based QR rendering with API fallback
 - Responsive design for all screen sizes
 - Modern CSS animations and transitions
+- Firebase Firestore integration for cloud storage
+- Environment variables for secure configuration
+
+## Environment Variables
+The app uses environment variables for secure configuration. These are stored in the `.env` file:
+
+```
+# Firebase Configuration
+FIREBASE_API_KEY=your-api-key
+FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+FIREBASE_APP_ID=your-app-id
+FIREBASE_MEASUREMENT_ID=your-measurement-id
+```
+
+These variables are loaded at runtime and used to configure the Firebase connection. If the `.env` file cannot be loaded, the app will fall back to default values.
