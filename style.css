@@ -30,14 +30,17 @@ body {
     padding: 20px 0;
     position: relative;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 .header .header-icons {
     display: flex;
     gap: 16px;
     z-index: 20;
-    margin-right: 20px;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 @media (max-width: 600px) {
     .header .header-icons {
@@ -45,13 +48,26 @@ body {
         margin-right: 10px;
     }
 }
-.records-btn, .scan-btn {
-    /* Common styles for both buttons */
+/* Common styles for header buttons */
+.profile-btn, .scan-btn {
     width: 48px;
     height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0,255,255,0.08);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 12px #00ffff80;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.profile-btn:hover, .scan-btn:hover {
+    background: rgba(0,255,255,0.18);
+    box-shadow: 0 0 24px #00ffffcc;
+    transform: scale(1.05);
 }
 
 .logo {
@@ -63,10 +79,15 @@ body {
 }
 
 .logo-icon {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     filter: drop-shadow(0 0 20px #00ffff);
-    animation: rotate 10s linear infinite;
+    animation: rotate 10s linear infinite, pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% { filter: drop-shadow(0 0 10px #00ffff); }
+    100% { filter: drop-shadow(0 0 30px #00ffff); }
 }
 
 .logo-text {
@@ -475,35 +496,8 @@ body {
     position: relative;
 }
 
-/* Modal Styling */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: rgba(0,0,0,0.8);
-  z-index: 1000;
-  animation: fadeIn 0.3s;
-}
+/* Modal Styling - Install modal removed */
 
-.modal-content {
-  position: relative;
-  background: #fff;
-  padding: 25px;
-  width: 90%;
-  max-width: 400px;
-  border-radius: 12px;
-  margin: 15% auto;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-
-.close-modal {
-  position: absolute;
-  right: 20px;
-  top: 15px;
-  font-size: 28px;
-  cursor: pointer;
-}
 
 @keyframes fadeIn {
   from {opacity: 0;}
@@ -610,20 +604,7 @@ body {
 }
 
 
-    padding: 12px 32px;
-    box-shadow: 0 0 18px #00ffff80;
-    cursor: pointer;
-    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
-    outline: none;
-    letter-spacing: 1px;
-    text-shadow: 0 0 10px #00ffff80;
-    animation: pulse-glow 2s infinite alternate;
-}
-.install-pwa-btn:hover {
-    background: linear-gradient(90deg, #0080ff 0%, #00ffff 100%);
-    color: #fff;
-    box-shadow: 0 0 30px #00ffffcc;
-}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -874,53 +855,26 @@ body {
     }
 }
 
-.ai-agent-btn {
-    background: linear-gradient(90deg, #00ffff 0%, #0080ff 100%);
-    color: #0a0a0a;
-    font-weight: 700;
-    font-size: 1.05rem;
-    border: none;
-    border-radius: 22px;
-    padding: 10px 22px;
-    box-shadow: 0 0 12px #00ffff80;
-    cursor: pointer;
-    text-decoration: none;
-    letter-spacing: 1px;
-    text-shadow: 0 0 8px #00ffff80;
-    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
-    z-index: 20;
-    outline: none;
-    display: inline-block;
-    margin-left: 20px;
-}
-.ai-agent-btn:hover {
-    background: linear-gradient(90deg, #0080ff 0%, #00ffff 100%);
-    color: #fff;
-    box-shadow: 0 0 24px #00ffffcc;
-}
+/* AI Agent button styles moved to profile-btn-item in the profile modal */
 @media (max-width: 600px) {
-    .ai-agent-btn {
-        font-size: 0.95rem;
-        padding: 8px 14px;
-        margin-left: 10px;
+    .profile-btn-item {
+        padding: 12px;
     }
+    
+    .profile-btn-item .btn-icon {
+        font-size: 20px;
+        margin-right: 10px;
+    }
+    
+    .profile-btn-item .btn-text {
+        font-size: 14px;
+    }
+}
     
 
 }
 
-.records-btn {
-    background: rgba(0,255,255,0.08);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 12px #00ffff80;
-    transition: background 0.2s, box-shadow 0.2s;
-    z-index: 10;
-}
-.records-btn:hover {
-    background: rgba(0,255,255,0.18);
-    box-shadow: 0 0 24px #00ffffcc;
-}
+/* Button styles moved to common header button styles */
 
 .center-records-btn {
     display: block;
@@ -932,7 +886,7 @@ body {
     }
 }
 
-.records-modal {
+.profile-modal, .records-modal {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(10, 20, 30, 0.95);
@@ -942,7 +896,7 @@ body {
     z-index: 1000;
     animation: fadeIn 0.3s;
 }
-.records-modal-content {
+.profile-modal-content, .records-modal-content {
     background: #101820;
     border-radius: 18px;
     box-shadow: 0 0 40px #00ffff55;
@@ -955,7 +909,7 @@ body {
     align-items: center;
     color: #00ffff;
 }
-.close-records {
+.close-profile, .close-records {
     position: absolute;
     top: 10px;
     right: 16px;
@@ -967,8 +921,48 @@ body {
     z-index: 10;
     transition: color 0.2s;
 }
-.close-records:hover {
+.close-profile:hover, .close-records:hover {
     color: #fff;
+}
+
+.profile-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 20px;
+    gap: 15px;
+}
+
+.profile-btn-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.profile-btn-item:hover {
+    background: rgba(0, 255, 255, 0.2);
+    border-color: rgba(0, 255, 255, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.2);
+}
+
+.profile-btn-item .btn-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.profile-btn-item .btn-text {
+    font-weight: 600;
 }
 .records-list {
     width: 100%;

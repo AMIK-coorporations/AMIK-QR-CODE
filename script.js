@@ -34,7 +34,10 @@ class QRCodeGenerator {
         this.wifiPassword = document.getElementById('wifi-password');
         this.wifiEncryption = document.getElementById('wifi-encryption');
 
-        // Image/Video fields
+        // YouTube field
+        this.youtubeUrl = document.getElementById('youtube-url');
+
+        // Video field
         this.videoUrl = document.getElementById('video-url');
         
         this.currentQRCode = null;
@@ -195,16 +198,22 @@ class QRCodeGenerator {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
 
-        // Show/hide relevant input fields
-        this.qrInput.style.display = type === 'text' ? 'block' : 'none';
-        this.wifiSsid.parentElement.style.display = type === 'wifi' ? 'block' : 'none';
-        this.videoUrl.parentElement.style.display = type === 'video' ? 'block' : 'none';
+        // Show/hide relevant input groups based on data-type attribute
+        const inputGroups = this.inputContainer.querySelectorAll('.input-group');
+        inputGroups.forEach(group => {
+            group.style.display = group.dataset.type === type ? 'block' : 'none';
+        });
 
         // Clear input fields when switching types
         this.clearInput();
     }
     
     async generateQRCode() {
+        // If a QR code already exists, clear it first
+        if (this.currentQRCode) {
+            this.clearQRDisplay();
+        }
+        
         let text = '';
         switch (this.activeQrType) {
             case 'text':
@@ -222,9 +231,8 @@ class QRCodeGenerator {
                 text = this.videoUrl.value.trim();
                 break;
             case 'youtube':
-                const youtubeUrlInput = document.getElementById('youtube-url');
-                if (youtubeUrlInput) {
-                    text = youtubeUrlInput.value.trim();
+                if (this.youtubeUrl) {
+                    text = this.youtubeUrl.value.trim();
                 }
                 break;
         }
@@ -242,7 +250,13 @@ class QRCodeGenerator {
             // Clear previous QR code
             this.clearQRDisplay();
             
-            // Check if QRCode library is available, use fallback if not
+            // Check if QRCode library is available
+            if (typeof QRCode === 'undefined') {
+                console.warn('QRCode library not detected, loading it dynamically');
+                await this.loadQRCodeLibrary();
+            }
+            
+            // Double-check if library is now available, use fallback if not
             if (typeof QRCode === 'undefined' || window.QRLibraryReady === 'fallback') {
                 console.error('QRCode library not loaded, using fallback');
                 this.generateQRCodeFallback(text, size);
@@ -257,22 +271,28 @@ class QRCodeGenerator {
 
             // Use a Promise wrapper to handle the async generation
             await new Promise((resolve, reject) => {
-                QRCode.toCanvas(canvas, text, {
-                    width: size,
-                    height: size,
-                    margin: 2,
-                    color: {
-                        dark: colors.dark,
-                        light: colors.light
-                    },
-                    errorCorrectionLevel: 'H' // Use 'H' for high error correction when adding a logo
-                }, (error) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        resolve();
-                    }
-                });
+                try {
+                    QRCode.toCanvas(canvas, text, {
+                        width: size,
+                        height: size,
+                        margin: 2,
+                        color: {
+                            dark: colors.dark,
+                            light: colors.light
+                        },
+                        errorCorrectionLevel: 'H' // Use 'H' for high error correction when adding a logo
+                    }, (error) => {
+                        if (error) {
+                            console.error('QRCode.toCanvas error:', error);
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error in QRCode.toCanvas:', error);
+                    reject(error);
+                }
             });
 
             if (this.logoImage) {
@@ -290,6 +310,15 @@ class QRCodeGenerator {
             setTimeout(() => {
                 this.hideLoading();
                 this.showQRCode(canvas);
+                
+                // Add to records if QR code was successfully generated
+                if (window.qrRecords) {
+                    try {
+                        window.qrRecords.addRecordAction('generated');
+                    } catch (error) {
+                        console.error('Error adding QR code to records:', error);
+                    }
+                }
             }, 500);
             
         } catch (error) {
@@ -297,6 +326,24 @@ class QRCodeGenerator {
             this.hideLoading();
             this.showError('Unable to generate QR code. Please try again.');
         }
+    }
+    
+    // Helper method to dynamically load QR code library if needed
+    async loadQRCodeLibrary() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'qrcode.min.js';
+            script.onload = () => {
+                console.log('QRCode library loaded successfully');
+                resolve();
+            };
+            script.onerror = (error) => {
+                console.error('Failed to load QRCode library:', error);
+                window.QRLibraryReady = 'fallback';
+                reject(error);
+            };
+            document.body.appendChild(script);
+        });
     }
     
     showLoading() {
@@ -345,10 +392,17 @@ class QRCodeGenerator {
     }
     
     showQRCode(canvas) {
+        // Clear any existing QR code first
+        this.clearQRDisplay();
+        
+        // Add the new QR code
         this.qrContainer.appendChild(canvas);
         this.qrContainer.classList.add('has-qr');
         canvas.classList.add('fade-in', 'scale-in');
         this.showActionButtons();
+        
+        // Set this as the current QR code
+        this.currentQRCode = canvas;
     }
     
     clearQRDisplay() {
@@ -357,6 +411,7 @@ class QRCodeGenerator {
             existingQR.remove();
         }
         this.qrContainer.classList.remove('has-qr');
+        this.currentQRCode = null;
     }
     
     showActionButtons() {
@@ -426,15 +481,52 @@ class QRCodeGenerator {
     }
     
     clearInput() {
+        // Clear text input
         this.qrInput.value = '';
+        
+        // Clear WiFi inputs
+        this.wifiSsid.value = '';
+        this.wifiPassword.value = '';
+        this.wifiEncryption.value = 'WPA'; // Reset to default
+        
+        // Clear YouTube input
+        if (this.youtubeUrl) {
+            this.youtubeUrl.value = '';
+        }
+        
+        // Clear Video input
+        this.videoUrl.value = '';
+        
+        // Clear any existing QR code
+        this.clearQRDisplay();
+        
         this.showPlaceholder();
-        this.qrInput.focus();
+        
+        // Focus on the active input field
+        switch (this.activeQrType) {
+            case 'text':
+                this.qrInput.focus();
+                break;
+            case 'wifi':
+                this.wifiSsid.focus();
+                break;
+            case 'youtube':
+                if (this.youtubeUrl) this.youtubeUrl.focus();
+                break;
+            case 'video':
+                this.videoUrl.focus();
+                break;
+        }
+        
         this.showNotification('Cleared!', 'success');
     }
     
     generateQRCodeFallback(text, size) {
         // Fallback method using QR code API service
         try {
+            // Clear any existing QR code first
+            this.clearQRDisplay();
+            
             const img = document.createElement('img');
             img.id = 'qr-code';
             img.style.borderRadius = '10px';
@@ -530,7 +622,7 @@ class QRCodeGenerator {
                 navigator.serviceWorker.register('./sw.js')
                     .then((registration) => {
                         console.log('SW registered: ', registration);
-                        this.showNotification('App ready for offline use!', 'success');
+                        // No notification for offline use
                     })
                     .catch((registrationError) => {
                         console.log('SW registration failed: ', registrationError);
@@ -538,69 +630,11 @@ class QRCodeGenerator {
             });
         }
         
-        // Handle PWA installation prompt
+        // Prevent default install prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
-            installModal.style.display = 'block';
+            // Don't show any install prompts
         });
-        
-        // Handle successful installation
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed');
-            this.hideInstallButton();
-            this.showNotification('AMIK QR CODE installed successfully!', 'success');
-            this.deferredPrompt = null;
-        });
-    }
-    
-    // Show install button
-    showInstallButton() {
-        // Create install button if it doesn't exist
-        if (!document.getElementById('install-btn')) {
-            const installBtn = document.createElement('button');
-            installBtn.id = 'install-btn';
-            installBtn.className = 'btn-primary install-btn';
-            installBtn.innerHTML = '<span class="btn-text">📱 Install App</span>';
-            installBtn.addEventListener('click', () => this.installPWA());
-            
-            // Add to header
-            const header = document.querySelector('.header');
-            if (header) {
-                header.appendChild(installBtn);
-            }
-        }
-    }
-    
-    // Hide install button
-    hideInstallButton() {
-        const installBtn = document.getElementById('install-btn');
-        if (installBtn) {
-            installBtn.remove();
-        }
-    }
-    
-    // Install PWA
-    async installPWA() {
-        if (!this.deferredPrompt) return;
-        
-        try {
-            this.deferredPrompt.prompt();
-            const { outcome } = await this.deferredPrompt.userChoice;
-            
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt');
-                this.showNotification('Installing AMIK QR CODE...', 'success');
-            } else {
-                console.log('User dismissed the install prompt');
-            }
-            
-            this.deferredPrompt = null;
-            this.hideInstallButton();
-        } catch (error) {
-            console.error('Error during PWA installation:', error);
-            this.showNotification('Installation failed. Please try again.', 'error');
-        }
     }
 }
 
@@ -608,6 +642,9 @@ class QRCodeGenerator {
 class QRCodeRecords {
     constructor() {
         this.records = [];
+        this.profileBtn = document.getElementById('profile-btn');
+        this.profileModal = document.getElementById('profile-modal');
+        this.closeProfile = document.getElementById('close-profile');
         this.recordsBtn = document.getElementById('records-btn');
         this.recordsModal = document.getElementById('records-modal');
         this.closeRecords = document.getElementById('close-records');
@@ -620,8 +657,24 @@ class QRCodeRecords {
     }
     
     initRecords() {
+        if (this.profileBtn) {
+            this.profileBtn.addEventListener('click', () => this.showProfile());
+        }
+        if (this.closeProfile) {
+            this.closeProfile.addEventListener('click', () => this.hideProfile());
+        }
+        if (this.profileModal) {
+            this.profileModal.addEventListener('click', (e) => {
+                if (e.target === this.profileModal) {
+                    this.hideProfile();
+                }
+            });
+        }
         if (this.recordsBtn) {
-            this.recordsBtn.addEventListener('click', () => this.showRecords());
+            this.recordsBtn.addEventListener('click', () => {
+                this.hideProfile();
+                this.showRecords();
+            });
         }
         if (this.closeRecords) {
             this.closeRecords.addEventListener('click', () => this.hideRecords());
@@ -768,7 +821,8 @@ class QRCodeRecords {
             actions: {
                 downloaded: action === 'downloaded',
                 copied: action === 'copied',
-                scanned: false
+                scanned: false,
+                generated: action === 'generated'
             },
             scanCount: 0,
             qrImage: this.getCurrentQRImage()
@@ -780,13 +834,17 @@ class QRCodeRecords {
             existingRecord.actions[action] = true;
             existingRecord.timestamp = recordData.timestamp;
             
-            // Update in Firebase if it has a Firebase ID
-            if (existingRecord.firebaseId) {
+            // Update in Firebase if it has a Firebase ID and Firebase is available
+            if (existingRecord.firebaseId && window.firebaseDB && !window.firebaseInitFailed) {
                 try {
-                    await this.updateRecordInFirebase(existingRecord.firebaseId, {
+                    const updateSuccess = await this.updateRecordInFirebase(existingRecord.firebaseId, {
                         actions: existingRecord.actions,
                         timestamp: existingRecord.timestamp
                     });
+                    
+                    if (!updateSuccess) {
+                        console.warn('Firebase update failed, but local record was updated');
+                    }
                 } catch (error) {
                     console.error('Error updating record action in Firebase:', error);
                 }
@@ -795,15 +853,28 @@ class QRCodeRecords {
             // Update localStorage
             localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         } else {
-            try {
-                // Save to Firebase first
-                const firebaseId = await this.saveRecordToFirebase(recordData);
-                recordData.id = firebaseId;
-                recordData.firebaseId = firebaseId;
-            } catch (error) {
-                console.error('Error saving record to Firebase:', error);
-                // Fallback to local ID
-                recordData.id = Date.now();
+            // Try to save to Firebase if available
+            if (window.firebaseDB && !window.firebaseInitFailed) {
+                try {
+                    const firebaseId = await this.saveRecordToFirebase(recordData);
+                    if (firebaseId) {
+                        recordData.id = firebaseId;
+                        recordData.firebaseId = firebaseId;
+                        console.log('Record saved to Firebase with ID:', firebaseId);
+                    } else {
+                        // Firebase save failed, use local ID
+                        recordData.id = Date.now().toString();
+                        console.warn('Firebase save returned no ID, using local ID:', recordData.id);
+                    }
+                } catch (error) {
+                    console.error('Error saving record to Firebase:', error);
+                    // Fallback to local ID
+                    recordData.id = Date.now().toString();
+                }
+            } else {
+                // Firebase not available, use local ID
+                recordData.id = Date.now().toString();
+                console.log('Firebase not available, using local ID:', recordData.id);
             }
             
             this.records.unshift(recordData);
@@ -811,6 +882,8 @@ class QRCodeRecords {
         
         // Save to localStorage as backup
         localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+        console.log(`Record action '${action}' added successfully`);
+        return true;
     }
     
     getCurrentContent() {
@@ -858,19 +931,73 @@ class QRCodeRecords {
     
     async loadRecordsFromFirebase() {
         try {
+            // Check if Firebase services are available
+            if (!window.firebaseDB || !window.firebaseServices || window.firebaseInitFailed) {
+                console.warn('Firebase not available or initialization failed, loading from localStorage');
+                this.loadRecordsFromLocalStorage();
+                return;
+            }
+            
+            // Verify Firebase services are properly initialized
+            if (!window.firebaseServices.collection || !window.firebaseServices.getDocs) {
+                console.warn('Firebase services not properly initialized, loading from localStorage');
+                this.loadRecordsFromLocalStorage();
+                return;
+            }
+            
             const { collection, getDocs } = window.firebaseServices;
-            const querySnapshot = await getDocs(collection(window.firebaseDB, 'qrRecords'));
-            this.records = [];
-            querySnapshot.forEach((doc) => {
-                const record = { id: doc.id, ...doc.data() };
-                this.records.push(record);
-            });
-            // Sort by timestamp (newest first)
-            this.records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            try {
+                console.log('Attempting to fetch records from Firebase...');
+                const querySnapshot = await Promise.race([
+                    getDocs(collection(window.firebaseDB, 'qrRecords')),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase query timeout')), 5000))
+                ]);
+                
+                this.records = [];
+                querySnapshot.forEach((doc) => {
+                    try {
+                        const record = { 
+                            id: doc.id, 
+                            firebaseId: doc.id,
+                            ...doc.data() 
+                        };
+                        this.records.push(record);
+                    } catch (docError) {
+                        console.error('Error processing document:', docError);
+                    }
+                });
+                
+                // Sort by timestamp (newest first)
+                this.records.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                
+                console.log(`Successfully loaded ${this.records.length} records from Firebase`);
+                
+                // Save to localStorage as backup
+                localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
+            } catch (error) {
+                console.error('Error querying Firestore:', error);
+                this.loadRecordsFromLocalStorage();
+            }
         } catch (error) {
-            console.error('Error loading records from Firebase:', error);
-            // Fallback to localStorage if Firebase fails
-            this.records = JSON.parse(localStorage.getItem('qrCodeRecords')) || [];
+            console.error('Error in loadRecordsFromFirebase:', error);
+            this.loadRecordsFromLocalStorage();
+        }
+    }
+    
+    loadRecordsFromLocalStorage() {
+        try {
+            const storedRecords = localStorage.getItem('qrCodeRecords');
+            if (storedRecords) {
+                this.records = JSON.parse(storedRecords);
+                console.log(`Loaded ${this.records.length} records from localStorage`);
+            } else {
+                this.records = [];
+                console.log('No records found in localStorage');
+            }
+        } catch (error) {
+            console.error('Error loading from localStorage:', error);
+            this.records = [];
         }
     }
 
@@ -895,35 +1022,100 @@ class QRCodeRecords {
 
     async saveRecordToFirebase(recordData) {
         try {
+            // Check if Firebase is available and properly initialized
+            if (!window.firebaseDB || !window.firebaseServices || window.firebaseInitFailed) {
+                console.warn('Firebase not available or initialization failed, skipping Firebase save');
+                return Date.now().toString(); // Return a timestamp-based ID as fallback
+            }
+            
+            // Verify Firebase services are properly initialized
+            if (!window.firebaseServices.collection || !window.firebaseServices.addDoc) {
+                console.warn('Firebase services not properly initialized, skipping Firebase save');
+                return Date.now().toString();
+            }
+            
             const { collection, addDoc } = window.firebaseServices;
-            const docRef = await addDoc(collection(window.firebaseDB, 'qrRecords'), recordData);
+            
+            // Set a timeout for Firebase operations
+            const docRef = await Promise.race([
+                addDoc(collection(window.firebaseDB, 'qrRecords'), recordData),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase save timeout')), 5000))
+            ]);
+            
+            console.log('Record saved to Firebase successfully with ID:', docRef.id);
             return docRef.id;
         } catch (error) {
             console.error('Error saving record to Firebase:', error);
-            throw error;
+            return Date.now().toString(); // Return a timestamp-based ID as fallback
         }
     }
 
     async updateRecordInFirebase(recordId, updates) {
         try {
+            // Check if Firebase is available and properly initialized
+            if (!window.firebaseDB || !window.firebaseServices || window.firebaseInitFailed) {
+                console.warn('Firebase not available or initialization failed, skipping Firebase update');
+                return false;
+            }
+            
+            // Verify Firebase services are properly initialized
+            if (!window.firebaseServices.doc || !window.firebaseServices.updateDoc) {
+                console.warn('Firebase services not properly initialized, skipping Firebase update');
+                return false;
+            }
+            
             const { doc, updateDoc } = window.firebaseServices;
-            const recordRef = doc(window.firebaseDB, 'qrRecords', recordId);
-            await updateDoc(recordRef, updates);
+            
+            // Set a timeout for Firebase operations
+            await Promise.race([
+                updateDoc(doc(window.firebaseDB, 'qrRecords', recordId), updates),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase update timeout')), 5000))
+            ]);
+            
+            console.log('Record updated in Firebase successfully with ID:', recordId);
+            return true;
         } catch (error) {
             console.error('Error updating record in Firebase:', error);
-            throw error;
+            return false;
         }
     }
 
     async deleteRecordFromFirebase(recordId) {
         try {
+            // Check if Firebase is available and properly initialized
+            if (!window.firebaseDB || !window.firebaseServices || window.firebaseInitFailed) {
+                console.warn('Firebase not available or initialization failed, skipping Firebase delete');
+                return false;
+            }
+            
+            // Verify Firebase services are properly initialized
+            if (!window.firebaseServices.doc || !window.firebaseServices.deleteDoc) {
+                console.warn('Firebase services not properly initialized, skipping Firebase delete');
+                return false;
+            }
+            
             const { doc, deleteDoc } = window.firebaseServices;
-            const recordRef = doc(window.firebaseDB, 'qrRecords', recordId);
-            await deleteDoc(recordRef);
+            
+            // Set a timeout for Firebase operations
+            await Promise.race([
+                deleteDoc(doc(window.firebaseDB, 'qrRecords', recordId)),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase delete timeout')), 5000))
+            ]);
+            
+            console.log('Record deleted from Firebase successfully with ID:', recordId);
+            return true;
         } catch (error) {
             console.error('Error deleting record from Firebase:', error);
-            throw error;
+            return false;
         }
+    }
+    
+    showProfile() {
+        this.profileModal.style.display = 'flex';
+    }
+    
+    hideProfile() {
+        this.profileModal.style.display = 'none';
     }
     
     showRecords() {
@@ -1064,12 +1256,18 @@ class QRCodeRecords {
         if (confirm('Are you sure you want to delete this record?')) {
             const record = this.records.find(r => r.id === recordId);
             if (record) {
+                let firebaseDeleteSuccess = true;
+                
                 // Delete from Firebase if it has a Firebase ID
-                if (record.firebaseId) {
+                if (record.firebaseId && window.firebaseDB && !window.firebaseInitFailed) {
                     try {
-                        await this.deleteRecordFromFirebase(record.firebaseId);
+                        firebaseDeleteSuccess = await this.deleteRecordFromFirebase(record.firebaseId);
+                        if (!firebaseDeleteSuccess) {
+                            console.warn('Firebase delete operation failed, but proceeding with local delete');
+                        }
                     } catch (error) {
                         console.error('Error deleting record from Firebase:', error);
+                        firebaseDeleteSuccess = false;
                     }
                 }
                 
@@ -1080,7 +1278,12 @@ class QRCodeRecords {
                 localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
                 
                 this.renderRecords();
-                this.showNotification('Record deleted!');
+                
+                if (firebaseDeleteSuccess) {
+                    this.showNotification('Record deleted successfully!');
+                } else {
+                    this.showNotification('Record deleted from local storage only.');
+                }
             }
         }
     }
@@ -1185,62 +1388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(style);
 });
 
-// Add PWA install button logic
-window.addEventListener('DOMContentLoaded', () => {
-    // PWA Installation Handling
-    let deferredPrompt;
-    const installModal = document.getElementById('install-modal');
-    const closeModal = document.querySelector('.close-modal');
-    
-    // Modal Event Listeners
-    closeModal.addEventListener('click', () => {
-        installModal.style.display = 'none';
-    });
-    
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installModal.style.display = 'block';
-    });
-    
-    document.getElementById('modal-install-btn').addEventListener('click', async () => {
-        installModal.style.display = 'none';
-        if(deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if(outcome === 'accepted') {
-                console.log('PWA installed');
-            }
-            deferredPrompt = null;
-        }
-    });
-    
-    // Check if app is already installed
-    window.addEventListener('appinstalled', () => {
-        installModal.style.display = 'none';
-        deferredPrompt = null;
-    });
-
-    // If already installed, don't show the button
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        installContainer.innerHTML = '';
-    }
-
-    function showInstallButton() {
-        installContainer.innerHTML = '<button class="install-pwa-btn">Install App</button>';
-        const btn = installContainer.querySelector('.install-pwa-btn');
-        btn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installContainer.innerHTML = '';
-                }
-                deferredPrompt = null;
-            }
-        });
-    }
-});
+// PWA install button logic removed
 
 // QR/Barcode Scanner logic
 (function() {
@@ -1250,6 +1398,10 @@ window.addEventListener('DOMContentLoaded', () => {
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js';
         script.onload = () => { html5QrScriptLoaded = true; callback(); };
+        script.onerror = () => { 
+            console.error('Failed to load HTML5 QR Code scanner script');
+            scanResult.textContent = 'Failed to load scanner. Check your internet connection.';
+        };
         document.body.appendChild(script);
     }
     const scanBtn = document.getElementById('scan-btn');
@@ -1261,26 +1413,84 @@ window.addEventListener('DOMContentLoaded', () => {
     if (scanBtn && scannerModal && closeScanner && qrReader) {
         scanBtn.addEventListener('click', () => {
             scannerModal.style.display = 'flex';
-            scanResult.textContent = '';
+            scanResult.textContent = 'Loading camera...';
             loadHtml5QrScript(() => {
-                if (html5Qr) html5Qr.clear();
-                html5Qr = new window.Html5Qrcode('qr-reader');
-                html5Qr.start(
-                    { facingMode: 'environment' },
-                    { fps: 15, qrbox: 220, aspectRatio: 1 },
-                    (decodedText, decodedResult) => {
-                        scanResult.textContent = decodedText;
-                        html5Qr.stop();
-                    },
-                    (error) => {}
-                ).catch(err => {
-                    scanResult.textContent = 'Camera error: ' + err;
-                });
+                try {
+                    if (html5Qr) {
+                        html5Qr.stop().then(() => {
+                            startScanner();
+                        }).catch(err => {
+                            console.error('Error stopping previous scanner instance:', err);
+                            startScanner();
+                        });
+                    } else {
+                        startScanner();
+                    }
+                } catch (error) {
+                    console.error('Error initializing scanner:', error);
+                    scanResult.textContent = 'Error initializing scanner: ' + error.message;
+                }
             });
         });
+        
+        function startScanner() {
+            try {
+                html5Qr = new window.Html5Qrcode('qr-reader');
+                const config = { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1 };
+                
+                html5Qr.start(
+                    { facingMode: 'environment' },
+                    config,
+                    (decodedText, decodedResult) => {
+                        scanResult.innerHTML = `<div class="scan-success">Scanned successfully!</div><div class="scan-content">${decodedText}</div>`;
+                        // Add a button to copy the result
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'btn-primary';
+                        copyBtn.textContent = 'Copy Result';
+                        copyBtn.addEventListener('click', () => {
+                            navigator.clipboard.writeText(decodedText)
+                                .then(() => {
+                                    copyBtn.textContent = 'Copied!';
+                                    setTimeout(() => {
+                                        copyBtn.textContent = 'Copy Result';
+                                    }, 2000);
+                                })
+                                .catch(err => {
+                                    console.error('Error copying text:', err);
+                                });
+                        });
+                        scanResult.appendChild(copyBtn);
+                        
+                        // Stop scanning after successful scan
+                        html5Qr.stop().catch(err => {
+                            console.error('Error stopping scanner after successful scan:', err);
+                        });
+                        
+                        // Notify QRCodeRecords about the scan
+                        if (window.qrRecords) {
+                            window.qrRecords.addScanRecord(decodedText);
+                        }
+                    },
+                    (errorMessage) => {
+                        // Handle scan error silently
+                    }
+                ).catch(err => {
+                    console.error('Error starting scanner:', err);
+                    scanResult.textContent = 'Camera error: ' + err;
+                });
+            } catch (error) {
+                console.error('Error in startScanner:', error);
+                scanResult.textContent = 'Failed to start scanner: ' + error.message;
+            }
+        }
+        
         closeScanner.addEventListener('click', () => {
             scannerModal.style.display = 'none';
-            if (html5Qr) html5Qr.stop().catch() => {};
+            if (html5Qr) {
+                html5Qr.stop().catch(error => {
+                    console.error('Error stopping scanner:', error);
+                });
+            }
         });
     }
 })();
@@ -1288,19 +1498,56 @@ window.addEventListener('DOMContentLoaded', () => {
 // Initialize QR Code Records when DOM is loaded
 let qrRecords;
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize QR Code Generator
+    if (!window.qrGenerator) {
+        window.qrGenerator = new QRCodeGenerator();
+    }
+    
+    // Listen for Firebase ready event
+    document.addEventListener('firebase-ready', (event) => {
+        console.log('Firebase ready event received:', event.detail);
+        if (!window.qrRecords) {
+            try {
+                window.qrRecords = new QRCodeRecords();
+                qrRecords = window.qrRecords;
+                console.log('QRCodeRecords initialized via firebase-ready event');
+            } catch (error) {
+                console.error('Error initializing QRCodeRecords from firebase-ready event:', error);
+            }
+        }
+    });
+    
     // Wait for Firebase to be available
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
+    const maxAttempts = 30; // 3 seconds max wait
     
     const waitForFirebase = () => {
-        if (window.firebaseDB && window.firebaseServices) {
-            qrRecords = new QRCodeRecords();
+        // Check if Firebase is available or if initialization failed
+        if ((window.firebaseDB && window.firebaseServices) || window.firebaseInitFailed) {
+            console.log('Firebase status determined, initializing QR Records');
+            if (!window.qrRecords) {
+                try {
+                    window.qrRecords = new QRCodeRecords();
+                    qrRecords = window.qrRecords;
+                    console.log('QRCodeRecords initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing QRCodeRecords:', error);
+                }
+            }
         } else if (attempts < maxAttempts) {
             attempts++;
             setTimeout(waitForFirebase, 100);
         } else {
-            console.warn('Firebase not available, initializing with fallback');
-            qrRecords = new QRCodeRecords();
+            console.warn('Firebase not available after maximum attempts, initializing with localStorage only');
+            if (!window.qrRecords) {
+                try {
+                    window.qrRecords = new QRCodeRecords();
+                    qrRecords = window.qrRecords;
+                    console.log('QRCodeRecords initialized with localStorage fallback');
+                } catch (error) {
+                    console.error('Error initializing QRCodeRecords with fallback:', error);
+                }
+            }
         }
     };
     

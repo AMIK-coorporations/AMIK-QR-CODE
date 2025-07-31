@@ -59,39 +59,71 @@ async function initializeFirebase() {
     console.warn('Using default Firebase configuration:', error);
   }
   
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const db = getFirestore(app);
-  
-  return { app, analytics, db };
+  try {
+    // Initialize Firebase
+    console.log('Initializing Firebase with config:', JSON.stringify(firebaseConfig));
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    
+    console.log('Firebase initialized successfully');
+    return { app, analytics, db };
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    throw error; // Re-throw to handle in the calling function
+  }
 }
 
 // Export Firebase services for use in other files
 async function exportFirebaseServices() {
-  const { app, analytics, db } = await initializeFirebase();
-  
-  window.firebaseApp = app;
-  window.firebaseAnalytics = analytics;
-  window.firebaseDB = db;
-  window.firebaseServices = {
-    collection,
-    addDoc,
-    getDocs,
-    deleteDoc,
-    doc,
-    updateDoc
-  };
+  try {
+    const { app, analytics, db } = await initializeFirebase();
+    
+    // Make Firebase services available globally
+    window.firebaseApp = app;
+    window.firebaseAnalytics = analytics;
+    window.firebaseDB = db;
+    window.firebaseServices = {
+      collection,
+      addDoc,
+      getDocs,
+      deleteDoc,
+      doc,
+      updateDoc
+    };
 
-  // Log success message
-  console.log('✅ Firebase initialized successfully!');
-  console.log('📊 Analytics:', analytics);
-  console.log('🗄️ Firestore:', db);
-  
-  return { app, analytics, db };
+    // Log success message
+    console.log('✅ Firebase initialized successfully!');
+    console.log('📊 Analytics:', analytics);
+    console.log('🗄️ Firestore:', db);
+    
+    // Dispatch an event to notify the app that Firebase is ready
+    const event = new CustomEvent('firebase-ready', { detail: { success: true } });
+    document.dispatchEvent(event);
+    
+    return { app, analytics, db };
+  } catch (error) {
+    console.error('Failed to initialize Firebase services:', error);
+    
+    // Set a flag to indicate Firebase initialization failed
+    window.firebaseInitFailed = true;
+    
+    // Dispatch an event to notify the app that Firebase failed
+    const event = new CustomEvent('firebase-ready', { detail: { success: false, error } });
+    document.dispatchEvent(event);
+    
+    // Return null values to indicate failure
+    return { app: null, analytics: null, db: null };
+  }
 }
 
 // Initialize Firebase when the script loads
-exportFirebaseServices().catch(error => {
-  console.error('Failed to initialize Firebase:', error);
-});
+try {
+  exportFirebaseServices().catch(error => {
+    console.error('Failed to initialize Firebase:', error);
+  });
+} catch (error) {
+  console.error('Critical error during Firebase initialization:', error);
+  // Set a flag to indicate Firebase initialization failed
+  window.firebaseInitFailed = true;
+}
