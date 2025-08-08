@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../for awab calculator"
+		}
+	],
+	"settings": {
+		"liveServer.settings.port": 8000
+	}
+}
