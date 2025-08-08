@@ -1550,12 +1550,6 @@ class QRCodeRecords {
         
         // Show popup after a delay
         this.scheduleAppDownloadPopup();
-        
-        // For testing - force popup to show immediately
-        console.log('Forcing popup for testing...');
-        setTimeout(() => {
-            this.forceShowPopup();
-        }, 1000);
     }
     
     scheduleAppDownloadPopup() {
@@ -1851,21 +1845,45 @@ class QRCodeRecords {
         const hasDownloadedAPK = localStorage.getItem('amik-qr-app-downloaded');
         const hasDownloadedIPA = localStorage.getItem('amik-qr-ipa-downloaded');
         
-        // Check if user agent indicates mobile app (only check for specific app identifiers)
+        // Check if user agent indicates mobile app (including Median.co app wrapper)
         const userAgent = navigator.userAgent.toLowerCase();
         const isMobileApp = userAgent.includes('amik-qr-code') || 
                            userAgent.includes('amikqr') ||
-                           userAgent.includes('amik_qr');
+                           userAgent.includes('amik_qr') ||
+                           userAgent.includes('median') ||
+                           userAgent.includes('webview') ||
+                           userAgent.includes('android') && userAgent.includes('mobile') ||
+                           userAgent.includes('wv') || // WebView indicator
+                           userAgent.includes('okhttp') || // Common in app wrappers
+                           userAgent.includes('native');
+        
+        // Check for Median.co specific indicators
+        const isMedianApp = window.median || 
+                           window.Median || 
+                           userAgent.includes('median.co') ||
+                           userAgent.includes('medianapp') ||
+                           userAgent.includes('median') ||
+                           // Check for common app wrapper patterns
+                           (userAgent.includes('android') && userAgent.includes('wv')) ||
+                           (userAgent.includes('mobile') && userAgent.includes('safari') && userAgent.includes('version'));
+        
+        // Additional checks for app environment
+        const isAppEnvironment = window.navigator.standalone || 
+                               window.matchMedia('(display-mode: standalone)').matches ||
+                               window.matchMedia('(display-mode: fullscreen)').matches ||
+                               window.matchMedia('(display-mode: minimal-ui)').matches;
         
         console.log('App detection:', {
             isPWA,
             hasDownloadedAPK,
             hasDownloadedIPA,
             isMobileApp,
+            isMedianApp,
+            isAppEnvironment,
             userAgent
         });
         
-        return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp;
+        return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp || isMedianApp || isAppEnvironment;
     }
 }
 
