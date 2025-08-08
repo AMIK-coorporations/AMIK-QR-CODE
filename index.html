@@ -199,10 +199,10 @@
             <button id="close-profile" class="close-profile">&times;</button>
             <h2>Profile</h2>
             <div class="profile-buttons">
-                <a href="https://amik-ai-agent.vercel.app" target="_blank" rel="noopener" class="profile-btn-item ai-agent-btn">
+                <button id="ai-agent-btn" class="profile-btn-item ai-agent-btn">
                     <span class="btn-icon">🤖</span>
                     <span class="btn-text">AMIK AI AGENT<br><small>non public beta, coming soon</small></span>
-                </a>
+                </button>
                 <button id="records-btn" class="profile-btn-item records-btn">
                     <span class="btn-icon">📊</span>
                     <span class="btn-text">QR Code Records</span>
@@ -217,6 +217,24 @@
             <button id="close-records" class="close-records">&times;</button>
             <h2>Your QR Code Records</h2>
             <div id="records-list" class="records-list"></div>
+        </div>
+    </div>
+
+    <!-- Platform Selection Modal -->
+    <div id="platform-modal" class="platform-modal" style="display:none;">
+        <div class="platform-modal-content">
+            <button id="close-platform" class="close-platform">&times;</button>
+            <h2>Choose Your Platform</h2>
+            <div class="platform-buttons">
+                <button id="iphone-btn" class="platform-btn-item iphone-btn">
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">iPhone</span>
+                </button>
+                <button id="android-btn" class="platform-btn-item android-btn">
+                    <span class="btn-icon">🤖</span>
+                    <span class="btn-text">Android</span>
+                </button>
+            </div>
         </div>
     </div>
 

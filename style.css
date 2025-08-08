@@ -870,9 +870,6 @@ body {
         font-size: 14px;
     }
 }
-    
-
-}
 
 /* Button styles moved to common header button styles */
 
@@ -992,5 +989,95 @@ body {
     }
     .records-list {
         max-height: 220px;
+    }
+}
+
+/* Platform Modal Styles */
+.platform-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 20, 30, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s;
+}
+
+.platform-modal-content {
+    background: #101820;
+    border-radius: 18px;
+    box-shadow: 0 0 40px #00ffff55;
+    padding: 24px 16px 16px 16px;
+    position: relative;
+    width: 95vw;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #00ffff;
+}
+
+.close-platform {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #00ffff;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+
+.close-platform:hover {
+    color: #fff;
+}
+
+.platform-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 20px;
+    gap: 15px;
+}
+
+.platform-btn-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.platform-btn-item:hover {
+    background: rgba(0, 255, 255, 0.2);
+    border-color: rgba(0, 255, 255, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.2);
+}
+
+.platform-btn-item .btn-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.platform-btn-item .btn-text {
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    .platform-modal-content {
+        padding: 10px 4px 8px 4px;
+        max-width: 98vw;
     }
 }

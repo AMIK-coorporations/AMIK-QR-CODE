@@ -686,6 +686,9 @@ class QRCodeRecords {
                 }
             });
         }
+        
+        // Initialize platform selection functionality
+        this.initPlatformSelection();
     }
     
     trackExistingActions() {
@@ -1310,6 +1313,182 @@ class QRCodeRecords {
         setTimeout(() => {
             notification.remove();
         }, 3000);
+    }
+    
+    initPlatformSelection() {
+        const aiAgentBtn = document.getElementById('ai-agent-btn');
+        const platformModal = document.getElementById('platform-modal');
+        const closePlatform = document.getElementById('close-platform');
+        const iphoneBtn = document.getElementById('iphone-btn');
+        const androidBtn = document.getElementById('android-btn');
+        
+        if (aiAgentBtn) {
+            aiAgentBtn.addEventListener('click', () => {
+                this.hideProfile();
+                this.showPlatformModal();
+            });
+        }
+        
+        if (closePlatform) {
+            closePlatform.addEventListener('click', () => this.hidePlatformModal());
+        }
+        
+        if (platformModal) {
+            platformModal.addEventListener('click', (e) => {
+                if (e.target === platformModal) {
+                    this.hidePlatformModal();
+                }
+            });
+        }
+        
+        if (iphoneBtn) {
+            iphoneBtn.addEventListener('click', () => this.handleIPhoneSelection());
+        }
+        
+        if (androidBtn) {
+            androidBtn.addEventListener('click', () => this.handleAndroidSelection());
+        }
+    }
+    
+    showPlatformModal() {
+        const platformModal = document.getElementById('platform-modal');
+        if (platformModal) {
+            platformModal.style.display = 'flex';
+        }
+    }
+    
+    hidePlatformModal() {
+        const platformModal = document.getElementById('platform-modal');
+        if (platformModal) {
+            platformModal.style.display = 'none';
+        }
+    }
+    
+    handleIPhoneSelection() {
+        this.hidePlatformModal();
+        this.showNotification('The iOS app is currently under development and will be available soon. Thank you for your patience!');
+    }
+    
+    handleAndroidSelection() {
+        this.hidePlatformModal();
+        
+        // Request permissions for Android
+        if ('permissions' in navigator) {
+            navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
+                if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                    // Show download dialog
+                    this.showAndroidDownloadDialog();
+                } else {
+                    // Request permission first
+                    this.requestNotificationPermission();
+                }
+            }).catch(() => {
+                // Fallback if permissions API is not available
+                this.showAndroidDownloadDialog();
+            });
+        } else {
+            // Fallback for browsers without permissions API
+            this.showAndroidDownloadDialog();
+        }
+    }
+    
+    requestNotificationPermission() {
+        if ('Notification' in window) {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    this.showAndroidDownloadDialog();
+                } else {
+                    this.showAndroidDownloadDialog();
+                }
+            }).catch(() => {
+                this.showAndroidDownloadDialog();
+            });
+        } else {
+            this.showAndroidDownloadDialog();
+        }
+    }
+    
+    showAndroidDownloadDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'download-dialog';
+        dialog.innerHTML = `
+            <div class="download-dialog-content">
+                <h3>Download AMIK AI AGENT</h3>
+                <p>Would you like to download and install the AMIK AI AGENT Android app?</p>
+                <div class="download-buttons">
+                    <button class="btn-primary download-confirm">Download APK</button>
+                    <button class="btn-secondary download-cancel">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        // Add styles
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 20, 30, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        `;
+        
+        const content = dialog.querySelector('.download-dialog-content');
+        content.style.cssText = `
+            background: #101820;
+            border-radius: 18px;
+            box-shadow: 0 0 40px #00ffff55;
+            padding: 24px;
+            max-width: 400px;
+            width: 90vw;
+            text-align: center;
+            color: #fff;
+        `;
+        
+        const buttons = dialog.querySelector('.download-buttons');
+        buttons.style.cssText = `
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners
+        dialog.querySelector('.download-confirm').addEventListener('click', () => {
+            this.downloadAPK();
+            dialog.remove();
+        });
+        
+        dialog.querySelector('.download-cancel').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        // Close on outside click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
+    }
+    
+    downloadAPK() {
+        try {
+            const link = document.createElement('a');
+            link.href = 'app-release-amikaiagent.apk';
+            link.download = 'AMIK_AI_AGENT.apk';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showNotification('Download started! Please install the APK file.');
+        } catch (error) {
+            console.error('Error downloading APK:', error);
+            this.showNotification('Error downloading APK. Please try again.');
+        }
     }
 }
 
