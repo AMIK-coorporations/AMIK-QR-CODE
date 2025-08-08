@@ -689,6 +689,12 @@ class QRCodeRecords {
         
         // Initialize platform selection functionality
         this.initPlatformSelection();
+        
+        // Initialize app download popup
+        this.initAppDownloadPopup();
+        
+        // Initialize manual download app button
+        this.initManualDownloadButton();
     }
     
     trackExistingActions() {
@@ -1326,6 +1332,8 @@ class QRCodeRecords {
             aiAgentBtn.addEventListener('click', () => {
                 this.hideProfile();
                 this.showPlatformModal();
+                // Use original AI Agent handlers
+                this.restoreAIAgentHandlers();
             });
         }
         
@@ -1484,10 +1492,378 @@ class QRCodeRecords {
             link.click();
             document.body.removeChild(link);
             
+            // Mark as downloaded
+            localStorage.setItem('amik-ai-agent-downloaded', 'true');
+            
             this.showNotification('Download started! Please install the APK file.');
         } catch (error) {
             console.error('Error downloading APK:', error);
             this.showNotification('Error downloading APK. Please try again.');
+        }
+    }
+    
+    // App Download Popup functionality
+    initAppDownloadPopup() {
+        const appDownloadPopup = document.getElementById('app-download-popup');
+        const closeAppPopup = document.getElementById('close-app-popup');
+        const downloadAppBtn = document.getElementById('download-app-btn');
+        const maybeLaterBtn = document.getElementById('maybe-later-btn');
+        
+        if (closeAppPopup) {
+            closeAppPopup.addEventListener('click', () => this.hideAppDownloadPopup());
+        }
+        
+        if (appDownloadPopup) {
+            appDownloadPopup.addEventListener('click', (e) => {
+                if (e.target === appDownloadPopup) {
+                    this.hideAppDownloadPopup();
+                }
+            });
+        }
+        
+        if (downloadAppBtn) {
+            downloadAppBtn.addEventListener('click', () => {
+                this.hideAppDownloadPopup();
+                this.showPlatformModal();
+                // Update platform modal for QR Code app
+                this.updatePlatformModalForQRCode();
+            });
+        }
+        
+        if (maybeLaterBtn) {
+            maybeLaterBtn.addEventListener('click', () => this.hideAppDownloadPopup());
+        }
+        
+        const showAgainBtn = document.getElementById('show-again-btn');
+        if (showAgainBtn) {
+            showAgainBtn.addEventListener('click', () => {
+                this.hideAppDownloadPopup();
+                this.resetAppDownloadPopup();
+                this.showNotification('Popup will show again on your next visit!');
+            });
+        }
+        
+        // Show popup after a delay
+        this.scheduleAppDownloadPopup();
+    }
+    
+    scheduleAppDownloadPopup() {
+        // Check if user has already seen the popup
+        const hasSeenPopup = localStorage.getItem('amik-qr-app-popup-seen');
+        if (hasSeenPopup) return;
+        
+        // Show popup after 3 seconds
+        setTimeout(() => {
+            this.showAppDownloadPopup();
+        }, 3000);
+    }
+    
+    // Method to reset popup (for testing or if user wants to see it again)
+    resetAppDownloadPopup() {
+        localStorage.removeItem('amik-qr-app-popup-seen');
+        console.log('App download popup reset - will show again on next visit');
+    }
+    
+    // Method to clear download history (for testing or if user wants to reset)
+    clearDownloadHistory() {
+        localStorage.removeItem('amik-qr-app-downloaded');
+        localStorage.removeItem('amik-qr-ipa-downloaded');
+        localStorage.removeItem('amik-ai-agent-downloaded');
+        this.checkAppInstallationStatus();
+        console.log('Download history cleared - buttons reset to original state');
+    }
+    
+    showAppDownloadPopup() {
+        const appDownloadPopup = document.getElementById('app-download-popup');
+        if (appDownloadPopup) {
+            appDownloadPopup.style.display = 'flex';
+            // Mark as seen
+            localStorage.setItem('amik-qr-app-popup-seen', 'true');
+        }
+    }
+    
+    hideAppDownloadPopup() {
+        const appDownloadPopup = document.getElementById('app-download-popup');
+        if (appDownloadPopup) {
+            appDownloadPopup.style.display = 'none';
+        }
+    }
+    
+    // Update the platform modal to handle both AI Agent and QR Code apps
+    updatePlatformModalForQRCode() {
+        const iphoneBtn = document.getElementById('iphone-btn');
+        const androidBtn = document.getElementById('android-btn');
+        const platformModal = document.getElementById('platform-modal');
+        
+        if (iphoneBtn && androidBtn && platformModal) {
+            // Update event listeners for QR Code app
+            iphoneBtn.onclick = () => this.handleQRCodeIPhoneSelection();
+            androidBtn.onclick = () => this.handleQRCodeAndroidSelection();
+        }
+    }
+    
+    handleQRCodeIPhoneSelection() {
+        this.hidePlatformModal();
+        
+        // Show iOS download dialog when available
+        this.showIOSDownloadDialog();
+    }
+    
+    showIOSDownloadDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'download-dialog';
+        dialog.innerHTML = `
+            <div class="download-dialog-content">
+                <h3>iOS App Coming Soon</h3>
+                <p>The AMIK QR CODE iOS app is currently under development and will be available on the App Store soon.</p>
+                <p>We'll notify you when it's ready!</p>
+                <div class="download-buttons">
+                    <button class="btn-primary notify-me-btn">Notify Me</button>
+                    <button class="btn-secondary download-cancel">Close</button>
+                </div>
+            </div>
+        `;
+        
+        // Add styles
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 20, 30, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        `;
+        
+        const content = dialog.querySelector('.download-dialog-content');
+        content.style.cssText = `
+            background: #101820;
+            border-radius: 18px;
+            box-shadow: 0 0 40px #00ffff55;
+            padding: 24px;
+            max-width: 400px;
+            width: 90vw;
+            text-align: center;
+            color: #fff;
+        `;
+        
+        const buttons = dialog.querySelector('.download-buttons');
+        buttons.style.cssText = `
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners
+        dialog.querySelector('.notify-me-btn').addEventListener('click', () => {
+            localStorage.setItem('amik-qr-ipa-downloaded', 'true');
+            this.checkAppInstallationStatus();
+            this.showNotification('We\'ll notify you when the iOS app is available!');
+            dialog.remove();
+        });
+        
+        dialog.querySelector('.download-cancel').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        // Close on outside click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
+    }
+    
+    handleQRCodeAndroidSelection() {
+        this.hidePlatformModal();
+        
+        // Request permissions for Android
+        if ('permissions' in navigator) {
+            navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
+                if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                    this.showQRCodeDownloadDialog();
+                } else {
+                    this.requestNotificationPermissionForQRCode();
+                }
+            }).catch(() => {
+                this.showQRCodeDownloadDialog();
+            });
+        } else {
+            this.showQRCodeDownloadDialog();
+        }
+    }
+    
+    requestNotificationPermissionForQRCode() {
+        if ('Notification' in window) {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    this.showQRCodeDownloadDialog();
+                } else {
+                    this.showQRCodeDownloadDialog();
+                }
+            }).catch(() => {
+                this.showQRCodeDownloadDialog();
+            });
+        } else {
+            this.showQRCodeDownloadDialog();
+        }
+    }
+    
+    showQRCodeDownloadDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'download-dialog';
+        dialog.innerHTML = `
+            <div class="download-dialog-content">
+                <h3>Download AMIK QR CODE</h3>
+                <p>Would you like to download and install the AMIK QR CODE Android app?</p>
+                <div class="download-buttons">
+                    <button class="btn-primary download-confirm">Download APK</button>
+                    <button class="btn-secondary download-cancel">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        // Add styles
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 20, 30, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        `;
+        
+        const content = dialog.querySelector('.download-dialog-content');
+        content.style.cssText = `
+            background: #101820;
+            border-radius: 18px;
+            box-shadow: 0 0 40px #00ffff55;
+            padding: 24px;
+            max-width: 400px;
+            width: 90vw;
+            text-align: center;
+            color: #fff;
+        `;
+        
+        const buttons = dialog.querySelector('.download-buttons');
+        buttons.style.cssText = `
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners
+        dialog.querySelector('.download-confirm').addEventListener('click', () => {
+            this.downloadQRCodeAPK();
+            dialog.remove();
+        });
+        
+        dialog.querySelector('.download-cancel').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        // Close on outside click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
+    }
+    
+    downloadQRCodeAPK() {
+        try {
+            const link = document.createElement('a');
+            link.href = 'app-release-amikqrcode.apk';
+            link.download = 'AMIK_QR_CODE.apk';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Mark as downloaded
+            localStorage.setItem('amik-qr-app-downloaded', 'true');
+            
+            // Hide download button
+            this.checkAppInstallationStatus();
+            
+            this.showNotification('Download started! Please install the APK file.');
+        } catch (error) {
+            console.error('Error downloading APK:', error);
+            this.showNotification('Error downloading APK. Please try again.');
+        }
+    }
+    
+    restoreAIAgentHandlers() {
+        const iphoneBtn = document.getElementById('iphone-btn');
+        const androidBtn = document.getElementById('android-btn');
+        
+        if (iphoneBtn && androidBtn) {
+            // Restore original AI Agent handlers
+            iphoneBtn.onclick = () => this.handleIPhoneSelection();
+            androidBtn.onclick = () => this.handleAndroidSelection();
+        }
+    }
+    
+    initManualDownloadButton() {
+        const downloadAppProfileBtn = document.getElementById('download-app-profile-btn');
+        
+        if (downloadAppProfileBtn) {
+            downloadAppProfileBtn.addEventListener('click', () => {
+                this.hideProfile();
+                this.showAppDownloadPopup();
+                // Update platform modal for QR Code app
+                this.updatePlatformModalForQRCode();
+            });
+            
+            // Check if user has already downloaded the app
+            this.checkAppInstallationStatus();
+        }
+    }
+    
+    checkAppInstallationStatus() {
+        const downloadAppProfileBtn = document.getElementById('download-app-profile-btn');
+        const hasDownloadedAPK = localStorage.getItem('amik-qr-app-downloaded');
+        const hasDownloadedIPA = localStorage.getItem('amik-qr-ipa-downloaded');
+        
+        if (downloadAppProfileBtn) {
+            if (hasDownloadedAPK || hasDownloadedIPA) {
+                // User has downloaded the app, change button text and functionality
+                downloadAppProfileBtn.innerHTML = `
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">Re-download App</span>
+                `;
+                downloadAppProfileBtn.style.display = 'flex';
+                
+                // Update click handler for re-download
+                downloadAppProfileBtn.onclick = () => {
+                    this.hideProfile();
+                    this.showAppDownloadPopup();
+                    this.updatePlatformModalForQRCode();
+                };
+            } else {
+                // User hasn't downloaded, show the original button
+                downloadAppProfileBtn.innerHTML = `
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">Download App</span>
+                `;
+                downloadAppProfileBtn.style.display = 'flex';
+                
+                // Update click handler for first download
+                downloadAppProfileBtn.onclick = () => {
+                    this.hideProfile();
+                    this.showAppDownloadPopup();
+                    this.updatePlatformModalForQRCode();
+                };
+            }
         }
     }
 }

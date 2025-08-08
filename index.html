@@ -203,6 +203,10 @@
                     <span class="btn-icon">🤖</span>
                     <span class="btn-text">AMIK AI AGENT<br><small>non public beta, coming soon</small></span>
                 </button>
+                <button id="download-app-profile-btn" class="profile-btn-item download-app-btn">
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">Download App</span>
+                </button>
                 <button id="records-btn" class="profile-btn-item records-btn">
                     <span class="btn-icon">📊</span>
                     <span class="btn-text">QR Code Records</span>
@@ -233,6 +237,33 @@
                 <button id="android-btn" class="platform-btn-item android-btn">
                     <span class="btn-icon">🤖</span>
                     <span class="btn-text">Android</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Download Popup -->
+    <div id="app-download-popup" class="app-download-popup" style="display:none;">
+        <div class="app-download-content">
+            <button id="close-app-popup" class="close-app-popup">&times;</button>
+            <div class="app-download-header">
+                <img src="icon.svg" alt="AMIK QR CODE" class="app-download-icon">
+                <h2>Download AMIK QR CODE App</h2>
+            </div>
+            <p class="app-download-description">
+                Get the full AMIK QR CODE experience with our mobile app! 
+                Generate QR codes faster, scan with ease, and access all features offline.
+            </p>
+            <div class="app-download-buttons">
+                <button id="download-app-btn" class="btn-primary">
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">Download App</span>
+                </button>
+                <button id="maybe-later-btn" class="btn-secondary">
+                    Maybe Later
+                </button>
+                <button id="show-again-btn" class="btn-secondary show-again-btn">
+                    Show Again Later
                 </button>
             </div>
         </div>

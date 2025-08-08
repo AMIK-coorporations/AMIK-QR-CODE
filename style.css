@@ -1081,3 +1081,119 @@ body {
         max-width: 98vw;
     }
 }
+
+/* App Download Popup Styles */
+.app-download-popup {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 20, 30, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    animation: fadeIn 0.3s;
+}
+
+.app-download-content {
+    background: #101820;
+    border-radius: 18px;
+    box-shadow: 0 0 40px #00ffff55;
+    padding: 24px;
+    max-width: 450px;
+    width: 90vw;
+    text-align: center;
+    color: #fff;
+    position: relative;
+}
+
+.close-app-popup {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #00ffff;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+
+.close-app-popup:hover {
+    color: #fff;
+}
+
+.app-download-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.app-download-icon {
+    width: 50px;
+    height: 50px;
+    filter: drop-shadow(0 0 15px #00ffff);
+    animation: pulse 3s ease-in-out infinite alternate;
+}
+
+.app-download-header h2 {
+    color: #00ffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.app-download-description {
+    color: #ccc;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.app-download-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.app-download-buttons .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.app-download-buttons .btn-secondary {
+    padding: 12px 20px;
+    font-size: 1rem;
+}
+
+.app-download-buttons .show-again-btn {
+    font-size: 0.9rem;
+    padding: 10px 20px;
+    opacity: 0.8;
+}
+
+.app-download-buttons .show-again-btn:hover {
+    opacity: 1;
+}
+
+@media (max-width: 600px) {
+    .app-download-content {
+        padding: 20px;
+        max-width: 95vw;
+    }
+    
+    .app-download-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .app-download-description {
+        font-size: 0.95rem;
+    }
+}
