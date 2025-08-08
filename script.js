@@ -1501,10 +1501,18 @@ class QRCodeRecords {
     
     // App Download Popup functionality
     initAppDownloadPopup() {
+        console.log('Initializing app download popup...');
         const appDownloadPopup = document.getElementById('app-download-popup');
         const closeAppPopup = document.getElementById('close-app-popup');
         const downloadAppBtn = document.getElementById('download-app-btn');
         const maybeLaterBtn = document.getElementById('maybe-later-btn');
+        
+        console.log('Found elements:', {
+            appDownloadPopup: !!appDownloadPopup,
+            closeAppPopup: !!closeAppPopup,
+            downloadAppBtn: !!downloadAppBtn,
+            maybeLaterBtn: !!maybeLaterBtn
+        });
         
         if (closeAppPopup) {
             closeAppPopup.addEventListener('click', () => this.hideAppDownloadPopup());
@@ -1542,16 +1550,34 @@ class QRCodeRecords {
         
         // Show popup after a delay
         this.scheduleAppDownloadPopup();
+        
+        // For testing - force popup to show immediately
+        console.log('Forcing popup for testing...');
+        setTimeout(() => {
+            this.forceShowPopup();
+        }, 1000);
     }
     
     scheduleAppDownloadPopup() {
         // Check if user has already seen the popup
         const hasSeenPopup = localStorage.getItem('amik-qr-app-popup-seen');
-        if (hasSeenPopup) return;
+        console.log('Popup scheduling check:', { hasSeenPopup });
+        
+        if (hasSeenPopup) {
+            console.log('Popup already seen, not showing');
+            return;
+        }
         
         // Check if user is already using the app
-        if (this.checkIfUsingApp()) return;
+        const isUsingApp = this.checkIfUsingApp();
+        console.log('Is using app:', isUsingApp);
         
+        if (isUsingApp) {
+            console.log('User is using app, not showing popup');
+            return;
+        }
+        
+        console.log('Scheduling popup to show in 3 seconds');
         // Show popup after 3 seconds
         setTimeout(() => {
             this.showAppDownloadPopup();
@@ -1570,6 +1596,13 @@ class QRCodeRecords {
         localStorage.removeItem('amik-qr-ipa-downloaded');
         localStorage.removeItem('amik-ai-agent-downloaded');
         console.log('Download history cleared');
+    }
+    
+    // Method to manually trigger popup for testing
+    forceShowPopup() {
+        localStorage.removeItem('amik-qr-app-popup-seen');
+        this.showAppDownloadPopup();
+        console.log('Forcing popup to show');
     }
     
     showAppDownloadPopup() {
@@ -1818,11 +1851,19 @@ class QRCodeRecords {
         const hasDownloadedAPK = localStorage.getItem('amik-qr-app-downloaded');
         const hasDownloadedIPA = localStorage.getItem('amik-qr-ipa-downloaded');
         
-        // Check if user agent indicates mobile app
+        // Check if user agent indicates mobile app (only check for specific app identifiers)
         const userAgent = navigator.userAgent.toLowerCase();
-        const isMobileApp = userAgent.includes('amik') || 
-                           userAgent.includes('qr') || 
-                           userAgent.includes('app');
+        const isMobileApp = userAgent.includes('amik-qr-code') || 
+                           userAgent.includes('amikqr') ||
+                           userAgent.includes('amik_qr');
+        
+        console.log('App detection:', {
+            isPWA,
+            hasDownloadedAPK,
+            hasDownloadedIPA,
+            isMobileApp,
+            userAgent
+        });
         
         return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp;
     }
