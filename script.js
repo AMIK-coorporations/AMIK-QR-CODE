@@ -1550,6 +1550,12 @@ class QRCodeRecords {
         
         // Show popup after a delay
         this.scheduleAppDownloadPopup();
+        
+        // For testing - force popup to show after 2 seconds
+        setTimeout(() => {
+            console.log('Testing popup - forcing to show');
+            this.forceShowPopup();
+        }, 2000);
     }
     
     scheduleAppDownloadPopup() {
@@ -1576,6 +1582,9 @@ class QRCodeRecords {
         setTimeout(() => {
             this.showAppDownloadPopup();
         }, 3000);
+        
+        // For debugging - log the detection results
+        console.log('Final detection result - Popup will show:', true);
     }
     
     // Method to reset popup (for testing or if user wants to see it again)
@@ -1847,31 +1856,26 @@ class QRCodeRecords {
         
         // Check if user agent indicates mobile app (including Median.co app wrapper)
         const userAgent = navigator.userAgent.toLowerCase();
+        
+        // Only detect specific app identifiers, not general mobile browsers
         const isMobileApp = userAgent.includes('amik-qr-code') || 
                            userAgent.includes('amikqr') ||
                            userAgent.includes('amik_qr') ||
-                           userAgent.includes('median') ||
-                           userAgent.includes('webview') ||
-                           userAgent.includes('android') && userAgent.includes('mobile') ||
-                           userAgent.includes('wv') || // WebView indicator
-                           userAgent.includes('okhttp') || // Common in app wrappers
-                           userAgent.includes('native');
+                           userAgent.includes('median.co') ||
+                           userAgent.includes('medianapp') ||
+                           // Only detect WebView when it's clearly an app wrapper
+                           (userAgent.includes('wv') && userAgent.includes('amik')) ||
+                           (userAgent.includes('webview') && userAgent.includes('amik'));
         
-        // Check for Median.co specific indicators
+        // Check for Median.co specific indicators (only actual app environment)
         const isMedianApp = window.median || 
                            window.Median || 
                            userAgent.includes('median.co') ||
-                           userAgent.includes('medianapp') ||
-                           userAgent.includes('median') ||
-                           // Check for common app wrapper patterns
-                           (userAgent.includes('android') && userAgent.includes('wv')) ||
-                           (userAgent.includes('mobile') && userAgent.includes('safari') && userAgent.includes('version'));
+                           userAgent.includes('medianapp');
         
-        // Additional checks for app environment
-        const isAppEnvironment = window.navigator.standalone || 
-                               window.matchMedia('(display-mode: standalone)').matches ||
-                               window.matchMedia('(display-mode: fullscreen)').matches ||
-                               window.matchMedia('(display-mode: minimal-ui)').matches;
+        // Only detect PWA when it's actually installed as standalone
+        const isAppEnvironment = window.navigator.standalone === true || 
+                               window.matchMedia('(display-mode: standalone)').matches;
         
         console.log('App detection:', {
             isPWA,
