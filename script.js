@@ -692,9 +692,6 @@ class QRCodeRecords {
         
         // Initialize app download popup
         this.initAppDownloadPopup();
-        
-        // Initialize manual download app button
-        this.initManualDownloadButton();
     }
     
     trackExistingActions() {
@@ -1552,6 +1549,9 @@ class QRCodeRecords {
         const hasSeenPopup = localStorage.getItem('amik-qr-app-popup-seen');
         if (hasSeenPopup) return;
         
+        // Check if user is already using the app
+        if (this.checkIfUsingApp()) return;
+        
         // Show popup after 3 seconds
         setTimeout(() => {
             this.showAppDownloadPopup();
@@ -1569,8 +1569,7 @@ class QRCodeRecords {
         localStorage.removeItem('amik-qr-app-downloaded');
         localStorage.removeItem('amik-qr-ipa-downloaded');
         localStorage.removeItem('amik-ai-agent-downloaded');
-        this.checkAppInstallationStatus();
-        console.log('Download history cleared - buttons reset to original state');
+        console.log('Download history cleared');
     }
     
     showAppDownloadPopup() {
@@ -1661,7 +1660,6 @@ class QRCodeRecords {
         // Event listeners
         dialog.querySelector('.notify-me-btn').addEventListener('click', () => {
             localStorage.setItem('amik-qr-ipa-downloaded', 'true');
-            this.checkAppInstallationStatus();
             this.showNotification('We\'ll notify you when the iOS app is available!');
             dialog.remove();
         });
@@ -1792,9 +1790,6 @@ class QRCodeRecords {
             // Mark as downloaded
             localStorage.setItem('amik-qr-app-downloaded', 'true');
             
-            // Hide download button
-            this.checkAppInstallationStatus();
-            
             this.showNotification('Download started! Please install the APK file.');
         } catch (error) {
             console.error('Error downloading APK:', error);
@@ -1813,58 +1808,23 @@ class QRCodeRecords {
         }
     }
     
-    initManualDownloadButton() {
-        const downloadAppProfileBtn = document.getElementById('download-app-profile-btn');
+    // Check if user is using the app (PWA or native app)
+    checkIfUsingApp() {
+        // Check if running as PWA
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
         
-        if (downloadAppProfileBtn) {
-            downloadAppProfileBtn.addEventListener('click', () => {
-                this.hideProfile();
-                this.showAppDownloadPopup();
-                // Update platform modal for QR Code app
-                this.updatePlatformModalForQRCode();
-            });
-            
-            // Check if user has already downloaded the app
-            this.checkAppInstallationStatus();
-        }
-    }
-    
-    checkAppInstallationStatus() {
-        const downloadAppProfileBtn = document.getElementById('download-app-profile-btn');
+        // Check if user has downloaded the app
         const hasDownloadedAPK = localStorage.getItem('amik-qr-app-downloaded');
         const hasDownloadedIPA = localStorage.getItem('amik-qr-ipa-downloaded');
         
-        if (downloadAppProfileBtn) {
-            if (hasDownloadedAPK || hasDownloadedIPA) {
-                // User has downloaded the app, change button text and functionality
-                downloadAppProfileBtn.innerHTML = `
-                    <span class="btn-icon">📱</span>
-                    <span class="btn-text">Re-download App</span>
-                `;
-                downloadAppProfileBtn.style.display = 'flex';
-                
-                // Update click handler for re-download
-                downloadAppProfileBtn.onclick = () => {
-                    this.hideProfile();
-                    this.showAppDownloadPopup();
-                    this.updatePlatformModalForQRCode();
-                };
-            } else {
-                // User hasn't downloaded, show the original button
-                downloadAppProfileBtn.innerHTML = `
-                    <span class="btn-icon">📱</span>
-                    <span class="btn-text">Download App</span>
-                `;
-                downloadAppProfileBtn.style.display = 'flex';
-                
-                // Update click handler for first download
-                downloadAppProfileBtn.onclick = () => {
-                    this.hideProfile();
-                    this.showAppDownloadPopup();
-                    this.updatePlatformModalForQRCode();
-                };
-            }
-        }
+        // Check if user agent indicates mobile app
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobileApp = userAgent.includes('amik') || 
+                           userAgent.includes('qr') || 
+                           userAgent.includes('app');
+        
+        return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp;
     }
 }
 
