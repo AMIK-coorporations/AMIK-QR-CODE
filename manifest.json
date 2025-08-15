@@ -18,7 +18,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "favicon.ico",
+      "src": "favicon.ico?v=2.1.0",
       "sizes": "32x32",
       "type": "image/x-icon"
     },

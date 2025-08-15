@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://amik-qr-code.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Allow important resources
+Allow: /icon-*.png
+Allow: /favicon.ico
+Allow: /manifest.json
+Allow: /app-release-amikqrcode.apk
+
+# Disallow unnecessary files
+Disallow: /.git/
+Disallow: /node_modules/ 

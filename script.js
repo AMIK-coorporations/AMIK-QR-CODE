@@ -195,7 +195,9 @@ class QRCodeGenerator {
     switchQrType(type) {
         this.activeQrType = type;
         this.qrTypeButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.type === type);
+            const isActive = btn.dataset.type === type;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive);
         });
 
         // Show/hide relevant input groups based on data-type attribute
@@ -206,6 +208,15 @@ class QRCodeGenerator {
 
         // Clear input fields when switching types
         this.clearInput();
+        
+        // Focus on the first input of the active tab
+        const activeGroup = this.inputContainer.querySelector(`[data-type="${type}"]`);
+        if (activeGroup) {
+            const firstInput = activeGroup.querySelector('input, textarea, select');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
+        }
     }
     
     async generateQRCode() {
@@ -1890,6 +1901,49 @@ class QRCodeRecords {
         return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp || isMedianApp || isAppEnvironment;
     }
 }
+
+// Disable zoom functionality
+document.addEventListener('DOMContentLoaded', () => {
+    // Prevent zoom with keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Prevent Ctrl/Cmd + +, -, 0, scroll
+        if ((e.ctrlKey || e.metaKey) && (e.keyCode === 61 || e.keyCode === 107 || e.keyCode === 173 || e.keyCode === 109 || e.keyCode === 187 || e.keyCode === 189 || e.keyCode === 48)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Prevent zoom with mouse wheel
+    document.addEventListener('wheel', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            return false;
+        }
+    }, { passive: false });
+
+    // Prevent zoom with touch gestures
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // Prevent pinch zoom
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+    }, false);
+
+    document.addEventListener('gesturechange', function(e) {
+        e.preventDefault();
+    }, false);
+
+    document.addEventListener('gestureend', function(e) {
+        e.preventDefault();
+    }, false);
+});
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
