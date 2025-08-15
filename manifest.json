@@ -12,10 +12,10 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "favicon.ico?v=2.1.0",
-      "sizes": "32x32",
-      "type": "image/x-icon",
-      "purpose": "any"
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
       "src": "favicon.ico?v=2.1.0",

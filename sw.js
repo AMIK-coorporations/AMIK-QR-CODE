@@ -1,5 +1,5 @@
 // Service Worker for AMIK QR CODE PWA
-const CACHE_NAME = 'amik-qr-code-v2.3.0';
+const CACHE_NAME = 'amik-qr-code-v2.2.0';
 const OFFLINE_URL = '/';
 
 // Files to cache for offline functionality
@@ -9,6 +9,7 @@ const CACHE_FILES = [
   '/style.css',
   '/script.js',
   '/qrcode.min.js',
+  '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
   '/favicon.ico',
