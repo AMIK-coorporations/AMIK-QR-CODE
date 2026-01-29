@@ -2028,11 +2028,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadHtml5QrScript(callback) {
         if (html5QrScriptLoaded) return callback();
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js';
+        // Use local script for offline support
+        script.src = 'html5-qrcode.min.js';
         script.onload = () => { html5QrScriptLoaded = true; callback(); };
         script.onerror = () => { 
-            console.error('Failed to load HTML5 QR Code scanner script');
-            scanResult.textContent = 'Failed to load scanner. Check your internet connection.';
+            console.error('Failed to load local HTML5 QR Code scanner script, trying CDN fallback...');
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+            fallbackScript.onload = () => { html5QrScriptLoaded = true; callback(); };
+            fallbackScript.onerror = () => {
+                console.error('Failed to load HTML5 QR Code scanner script from both local and CDN');
+                scanResult.textContent = 'Failed to load scanner. Please check your connection.';
+            };
+            document.body.appendChild(fallbackScript);
         };
         document.body.appendChild(script);
     }
@@ -2068,43 +2076,40 @@ document.addEventListener('DOMContentLoaded', () => {
         function startScanner() {
             try {
                 html5Qr = new window.Html5Qrcode('qr-reader');
-                const config = { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1 };
+                const config = { 
+                    fps: 20, 
+                    qrbox: { width: 250, height: 250 }, 
+                    aspectRatio: 1,
+                    // Enable support for all formats including barcodes
+                    formatsToSupport: [ 
+                        window.Html5QrcodeSupportedFormats.QR_CODE,
+                        window.Html5QrcodeSupportedFormats.AZTEC,
+                        window.Html5QrcodeSupportedFormats.CODABAR,
+                        window.Html5QrcodeSupportedFormats.CODE_39,
+                        window.Html5QrcodeSupportedFormats.CODE_93,
+                        window.Html5QrcodeSupportedFormats.CODE_128,
+                        window.Html5QrcodeSupportedFormats.DATA_MATRIX,
+                        window.Html5QrcodeSupportedFormats.MAXICODE,
+                        window.Html5QrcodeSupportedFormats.ITF,
+                        window.Html5QrcodeSupportedFormats.EAN_13,
+                        window.Html5QrcodeSupportedFormats.EAN_8,
+                        window.Html5QrcodeSupportedFormats.PDF_417,
+                        window.Html5QrcodeSupportedFormats.RSS_14,
+                        window.Html5QrcodeSupportedFormats.RSS_EXPANDED,
+                        window.Html5QrcodeSupportedFormats.UPC_A,
+                        window.Html5QrcodeSupportedFormats.UPC_E,
+                        window.Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION
+                    ]
+                };
                 
                 html5Qr.start(
                     { facingMode: 'environment' },
                     config,
                     (decodedText, decodedResult) => {
-                        scanResult.innerHTML = `<div class="scan-success">Scanned successfully!</div><div class="scan-content">${decodedText}</div>`;
-                        // Add a button to copy the result
-                        const copyBtn = document.createElement('button');
-                        copyBtn.className = 'btn-primary';
-                        copyBtn.textContent = 'Copy Result';
-                        copyBtn.addEventListener('click', () => {
-                            navigator.clipboard.writeText(decodedText)
-                                .then(() => {
-                                    copyBtn.textContent = 'Copied!';
-                                    setTimeout(() => {
-                                        copyBtn.textContent = 'Copy Result';
-                                    }, 2000);
-                                })
-                                .catch(err => {
-                                    console.error('Error copying text:', err);
-                                });
-                        });
-                        scanResult.appendChild(copyBtn);
-                        
-                        // Stop scanning after successful scan
-                        html5Qr.stop().catch(err => {
-                            console.error('Error stopping scanner after successful scan:', err);
-                        });
-                        
-                        // Notify QRCodeRecords about the scan
-                        if (window.qrRecords) {
-                            window.qrRecords.addScanRecord(decodedText);
-                        }
+                        handleScanSuccess(decodedText, decodedResult);
                     },
                     (errorMessage) => {
-                        // Handle scan error silently
+                        // Scan logic continues
                     }
                 ).catch(err => {
                     console.error('Error starting scanner:', err);
@@ -2114,6 +2119,105 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error in startScanner:', error);
                 scanResult.textContent = 'Failed to start scanner: ' + error.message;
             }
+        }
+
+        function handleScanSuccess(decodedText, decodedResult) {
+            // Stop scanning after success
+            if (html5Qr) {
+                html5Qr.stop().catch(err => console.error('Error stopping scanner:', err));
+            }
+
+            const formatName = decodedResult.result.format.formatName;
+            let resultHtml = `
+                <div class="scan-success-badge">
+                    <span class="pulse-icon">✓</span>
+                    Scanned ${formatName}
+                </div>
+                <div class="scan-content" id="final-scan-text">${decodedText}</div>
+                <div class="scan-actions-grid" id="scan-actions-container"></div>
+            `;
+            
+            scanResult.innerHTML = resultHtml;
+            const actionContainer = document.getElementById('scan-actions-container');
+            
+            // Analyze content and add buttons
+            const actions = analyzeScannedContent(decodedText);
+            actions.forEach(action => {
+                const btn = document.createElement('button');
+                btn.className = action.type === 'primary' ? 'btn-primary' : 'btn-secondary';
+                btn.innerHTML = `<span class="btn-icon">${action.icon}</span> ${action.label}`;
+                btn.onclick = action.onClick;
+                actionContainer.appendChild(btn);
+            });
+
+            // Always add a copy button
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn-secondary';
+            copyBtn.innerHTML = '<span class="btn-icon">📋</span> Copy Text';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(decodedText).then(() => {
+                    copyBtn.innerHTML = '<span class="btn-icon">✓</span> Copied!';
+                    setTimeout(() => copyBtn.innerHTML = '<span class="btn-icon">📋</span> Copy Text', 2000);
+                });
+            };
+            actionContainer.appendChild(copyBtn);
+
+            // Notify storage
+            if (window.qrRecords) {
+                window.qrRecords.addScanRecord(decodedText);
+            }
+        }
+
+        function analyzeScannedContent(text) {
+            const actions = [];
+            const trimmedText = text.trim();
+
+            // URL Detection
+            const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+            if (urlPattern.test(trimmedText)) {
+                let fullUrl = trimmedText;
+                if (!fullUrl.startsWith('http')) fullUrl = 'https://' + fullUrl;
+                actions.push({
+                    label: 'Open Link',
+                    icon: '🌐',
+                    type: 'primary',
+                    onClick: () => window.open(fullUrl, '_blank')
+                });
+            }
+
+            // Email Detection
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailPattern.test(trimmedText)) {
+                actions.push({
+                    label: 'Send Email',
+                    icon: '✉️',
+                    type: 'primary',
+                    onClick: () => window.location.href = `mailto:${trimmedText}`
+                });
+            }
+
+            // Phone Detection
+            const phonePattern = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+            if (phonePattern.test(trimmedText.replace(/\s/g, ''))) {
+                actions.push({
+                    label: 'Call',
+                    icon: '📞',
+                    type: 'primary',
+                    onClick: () => window.location.href = `tel:${trimmedText}`
+                });
+            }
+
+            // Product Code Detection (Barcodes)
+            if (/^\d{8,14}$/.test(trimmedText)) {
+                actions.push({
+                    label: 'Search Product',
+                    icon: '🛒',
+                    type: 'primary',
+                    onClick: () => window.open(`https://www.google.com/search?q=${trimmedText}`, '_blank')
+                });
+            }
+
+            return actions;
         }
         
         closeScanner.addEventListener('click', () => {
