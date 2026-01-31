@@ -11,7 +11,7 @@ Crawl-delay: 1
 Allow: /icon-*.png
 Allow: /favicon.ico
 Allow: /manifest.json
-Allow: /app-release-amikqrcode.apk
+Allow: /AMIK QR CODE v1.2.apk
 
 # Disallow unnecessary files
 Disallow: /.git/

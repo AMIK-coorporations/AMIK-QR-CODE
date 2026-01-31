@@ -22,7 +22,7 @@ class QRCodeGenerator {
         this.imagePreviewContainer = document.getElementById('image-preview-container') || null;
         this.imagePreview = document.getElementById('image-preview') || null;
         this.removeImageBtn = document.getElementById('remove-image-btn') || null;
-        
+
         this.patternItems = document.querySelectorAll('.pattern-item');
         this.primaryColorPicker = document.getElementById('primary-color');
         this.secondaryColorPicker = document.getElementById('secondary-color');
@@ -39,7 +39,7 @@ class QRCodeGenerator {
 
         // Video field
         this.videoUrl = document.getElementById('video-url');
-        
+
         this.currentQRCode = null;
         this.logoImage = null;
         this.imageData = null;
@@ -51,7 +51,7 @@ class QRCodeGenerator {
 
         this.init();
     }
-    
+
     init() {
         // Event listeners
         this.generateBtn.addEventListener('click', () => this.generateQRCode());
@@ -74,13 +74,16 @@ class QRCodeGenerator {
             this.imageDropZone.addEventListener('drop', (e) => this.handleDrop(e));
             this.imageFile.addEventListener('change', (e) => this.handleImageFile(e.target.files[0]));
         }
-        
+
         if (this.removeImageBtn) {
             this.removeImageBtn.addEventListener('click', () => this.removeImage());
         }
-        
+
         // Focus on input
         this.qrInput.focus();
+
+        // Check for updates if using Median app
+        this.checkAppVersion();
     }
 
     handleLogoUpload(e) {
@@ -191,7 +194,7 @@ class QRCodeGenerator {
     //     };
     //     return patterns[pattern] || patterns.default;
     // }
-    
+
     switchQrType(type) {
         this.activeQrType = type;
         this.qrTypeButtons.forEach(btn => {
@@ -208,7 +211,7 @@ class QRCodeGenerator {
 
         // Clear input fields when switching types
         this.clearInput();
-        
+
         // Focus on the first input of the active tab
         const activeGroup = this.inputContainer.querySelector(`[data-type="${type}"]`);
         if (activeGroup) {
@@ -218,13 +221,13 @@ class QRCodeGenerator {
             }
         }
     }
-    
+
     async generateQRCode() {
         // If a QR code already exists, clear it first
         if (this.currentQRCode) {
             this.clearQRDisplay();
         }
-        
+
         let text = '';
         switch (this.activeQrType) {
             case 'text':
@@ -247,36 +250,36 @@ class QRCodeGenerator {
                 }
                 break;
         }
-        
+
         if (!text) {
             this.showPlaceholder();
             return;
         }
-        
+
         this.showLoading();
-        
+
         try {
             const size = parseInt(this.qrSize.value);
-            
+
             // Clear previous QR code
             this.clearQRDisplay();
-            
+
             // Check if QRCode library is available
             if (typeof QRCode === 'undefined') {
                 console.warn('QRCode library not detected, loading it dynamically');
                 await this.loadQRCodeLibrary();
             }
-            
+
             // Double-check if library is now available, use fallback if not
             if (typeof QRCode === 'undefined' || window.QRLibraryReady === 'fallback') {
                 console.error('QRCode library not loaded, using fallback');
                 this.generateQRCodeFallback(text, size);
                 return;
             }
-            
+
             // Generate QR code
             const canvas = document.createElement('canvas');
-            
+
             // Use default colors (black on white)
             const colors = { dark: '#000000', light: '#FFFFFF' };
 
@@ -309,19 +312,19 @@ class QRCodeGenerator {
             if (this.logoImage) {
                 this.drawLogoOnCanvas(canvas, this.logoImage);
             }
-            
+
             // Style the canvas
             canvas.id = 'qr-code';
             canvas.style.borderRadius = '10px';
             canvas.style.boxShadow = '0 0 30px rgba(0, 255, 255, 0.3)';
-            
+
             this.currentQRCode = canvas;
-            
+
             // Display QR code with animation
             setTimeout(() => {
                 this.hideLoading();
                 this.showQRCode(canvas);
-                
+
                 // Add to records if QR code was successfully generated
                 if (window.qrRecords) {
                     try {
@@ -331,14 +334,14 @@ class QRCodeGenerator {
                     }
                 }
             }, 500);
-            
+
         } catch (error) {
             console.error('Error generating QR code:', error);
             this.hideLoading();
             this.showError('Unable to generate QR code. Please try again.');
         }
     }
-    
+
     // Helper method to dynamically load QR code library if needed
     async loadQRCodeLibrary() {
         return new Promise((resolve, reject) => {
@@ -356,18 +359,18 @@ class QRCodeGenerator {
             document.body.appendChild(script);
         });
     }
-    
+
     showLoading() {
         this.hideError();
         this.hidePlaceholder();
         this.hideActionButtons();
         this.loading.classList.add('show');
     }
-    
+
     hideLoading() {
         this.loading.classList.remove('show');
     }
-    
+
     showError(message = 'Error generating QR code. Please try again.') {
         this.hideLoading();
         this.hidePlaceholder();
@@ -375,17 +378,17 @@ class QRCodeGenerator {
         this.errorMessage.querySelector('p').textContent = message;
         this.errorMessage.classList.add('show');
     }
-    
+
     hideError() {
         this.errorMessage.classList.remove('show');
     }
-    
+
     showPlaceholder() {
         this.hideLoading();
         this.hideError();
         this.hideActionButtons();
         this.clearQRDisplay();
-        
+
         this.qrContainer.innerHTML = `
             <div class="placeholder">
                 <img src="icon.svg" alt="AMIK QR CODE" class="placeholder-icon">
@@ -394,28 +397,28 @@ class QRCodeGenerator {
         `;
         this.qrContainer.classList.remove('has-qr');
     }
-    
+
     hidePlaceholder() {
         const placeholder = this.qrContainer.querySelector('.placeholder');
         if (placeholder) {
             placeholder.remove();
         }
     }
-    
+
     showQRCode(canvas) {
         // Clear any existing QR code first
         this.clearQRDisplay();
-        
+
         // Add the new QR code
         this.qrContainer.appendChild(canvas);
         this.qrContainer.classList.add('has-qr');
         canvas.classList.add('fade-in', 'scale-in');
         this.showActionButtons();
-        
+
         // Set this as the current QR code
         this.currentQRCode = canvas;
     }
-    
+
     clearQRDisplay() {
         const existingQR = this.qrContainer.querySelector('#qr-code');
         if (existingQR) {
@@ -424,24 +427,24 @@ class QRCodeGenerator {
         this.qrContainer.classList.remove('has-qr');
         this.currentQRCode = null;
     }
-    
+
     showActionButtons() {
         this.actionButtons.style.display = 'flex';
         this.actionButtons.classList.add('fade-in');
     }
-    
+
     hideActionButtons() {
         this.actionButtons.style.display = 'none';
         this.actionButtons.classList.remove('fade-in');
     }
-    
+
     downloadQRCode() {
         if (!this.currentQRCode) return;
-        
+
         try {
             const link = document.createElement('a');
             link.download = `amik-qrcode-${Date.now()}.png`;
-            
+
             // Handle both canvas and image elements
             if (this.currentQRCode.toDataURL) {
                 // Canvas element
@@ -450,7 +453,7 @@ class QRCodeGenerator {
                 // Image element (fallback)
                 link.href = this.currentQRCode.src;
             }
-            
+
             link.click();
             this.showNotification('QR Code downloaded successfully!', 'success');
         } catch (error) {
@@ -458,10 +461,10 @@ class QRCodeGenerator {
             this.showNotification('Error downloading QR code', 'error');
         }
     }
-    
+
     async copyQRCode() {
         if (!this.currentQRCode) return;
-        
+
         try {
             if (this.currentQRCode.toBlob) {
                 // Canvas element
@@ -490,29 +493,29 @@ class QRCodeGenerator {
             this.showNotification('Error copying QR code', 'error');
         }
     }
-    
+
     clearInput() {
         // Clear text input
         this.qrInput.value = '';
-        
+
         // Clear WiFi inputs
         this.wifiSsid.value = '';
         this.wifiPassword.value = '';
         this.wifiEncryption.value = 'WPA'; // Reset to default
-        
+
         // Clear YouTube input
         if (this.youtubeUrl) {
             this.youtubeUrl.value = '';
         }
-        
+
         // Clear Video input
         this.videoUrl.value = '';
-        
+
         // Clear any existing QR code
         this.clearQRDisplay();
-        
+
         this.showPlaceholder();
-        
+
         // Focus on the active input field
         switch (this.activeQrType) {
             case 'text':
@@ -528,16 +531,16 @@ class QRCodeGenerator {
                 this.videoUrl.focus();
                 break;
         }
-        
+
         this.showNotification('Cleared!', 'success');
     }
-    
+
     generateQRCodeFallback(text, size) {
         // Fallback method using QR code API service
         try {
             // Clear any existing QR code first
             this.clearQRDisplay();
-            
+
             const img = document.createElement('img');
             img.id = 'qr-code';
             img.style.borderRadius = '10px';
@@ -546,11 +549,11 @@ class QRCodeGenerator {
             img.style.height = size + 'px';
             img.style.background = 'white';
             img.style.padding = '10px';
-            
+
             // Use QR Server API as fallback
             const encodedText = encodeURIComponent(text);
             img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodedText}`;
-            
+
             img.onload = () => {
                 this.currentQRCode = img;
                 setTimeout(() => {
@@ -558,30 +561,30 @@ class QRCodeGenerator {
                     this.showQRCode(img);
                 }, 500);
             };
-            
+
             img.onerror = () => {
                 this.hideLoading();
                 this.showError('Unable to generate QR code. Please check your internet connection.');
             };
-            
+
         } catch (error) {
             console.error('Fallback QR generation failed:', error);
             this.hideLoading();
             this.showError('Unable to generate QR code. Please try again.');
         }
     }
-    
+
     showNotification(message, type = 'info') {
         // Remove existing notifications
         const existingNotifications = document.querySelectorAll('.notification');
         existingNotifications.forEach(notification => notification.remove());
-        
+
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.innerHTML = `
             <span>${message}</span>
         `;
-        
+
         // Add notification styles
         notification.style.cssText = `
             position: fixed;
@@ -596,7 +599,7 @@ class QRCodeGenerator {
             transition: transform 0.3s ease;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         `;
-        
+
         if (type === 'success') {
             notification.style.background = 'linear-gradient(45deg, #00ffff, #0080ff)';
             notification.style.color = '#000';
@@ -606,14 +609,14 @@ class QRCodeGenerator {
             notification.style.background = 'rgba(255, 255, 255, 0.9)';
             notification.style.color = '#000';
         }
-        
+
         document.body.appendChild(notification);
-        
+
         // Animate in
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
         }, 100);
-        
+
         // Auto remove
         setTimeout(() => {
             notification.style.transform = 'translateX(100%)';
@@ -624,7 +627,7 @@ class QRCodeGenerator {
             }, 300);
         }, 3000);
     }
-    
+
     // PWA initialization
     initPWA() {
         // Register service worker
@@ -640,7 +643,7 @@ class QRCodeGenerator {
                     });
             });
         }
-        
+
         // Prevent default install prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -660,13 +663,13 @@ class QRCodeRecords {
         this.recordsModal = document.getElementById('records-modal');
         this.closeRecords = document.getElementById('close-records');
         this.recordsList = document.getElementById('records-list');
-        
+
         this.initRecords();
         this.trackExistingActions();
         this.trackScans();
         this.loadRecordsFromFirebase();
     }
-    
+
     initRecords() {
         if (this.profileBtn) {
             this.profileBtn.addEventListener('click', () => this.showProfile());
@@ -697,26 +700,26 @@ class QRCodeRecords {
                 }
             });
         }
-        
+
         // Initialize platform selection functionality
         this.initPlatformSelection();
-        
+
         // Initialize app download popup
         this.initAppDownloadPopup();
     }
-    
+
     trackExistingActions() {
         // Track existing download and copy buttons without modifying their original code
         const downloadBtn = document.getElementById('download-btn');
         const copyBtn = document.getElementById('copy-btn');
-        
+
         if (downloadBtn) {
             const originalDownload = downloadBtn.onclick;
             downloadBtn.addEventListener('click', async () => {
                 await this.addRecordAction('downloaded');
             });
         }
-        
+
         if (copyBtn) {
             const originalCopy = copyBtn.onclick;
             copyBtn.addEventListener('click', async () => {
@@ -724,7 +727,7 @@ class QRCodeRecords {
             });
         }
     }
-    
+
     trackScans() {
         // Track QR code scans from the scanner functionality
         const scanResult = document.getElementById('scan-result');
@@ -738,21 +741,21 @@ class QRCodeRecords {
                     }
                 });
             });
-            
+
             observer.observe(scanResult, { childList: true, subtree: true });
         }
     }
-    
+
     async addScanRecord(scannedContent) {
         // Check if this content matches any existing record
         const existingRecord = this.records.find(r => r.content === scannedContent);
-        
+
         if (existingRecord) {
             // Update existing record with scan
             existingRecord.actions.scanned = true;
             existingRecord.scanCount = (existingRecord.scanCount || 0) + 1;
             existingRecord.lastScanned = new Date().toISOString();
-            
+
             // Update in Firebase if it has a Firebase ID
             if (existingRecord.firebaseId) {
                 try {
@@ -782,7 +785,7 @@ class QRCodeRecords {
                 lastScanned: new Date().toISOString(),
                 qrImage: null
             };
-            
+
             try {
                 // Save to Firebase first
                 const firebaseId = await this.saveRecordToFirebase(recordData);
@@ -793,14 +796,14 @@ class QRCodeRecords {
                 // Fallback to local ID
                 recordData.id = Date.now();
             }
-            
+
             this.records.unshift(recordData);
         }
-        
+
         // Save to localStorage as backup
         localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
     }
-    
+
     detectContentType(content) {
         if (content.startsWith('WIFI:')) return 'wifi';
         if (content.includes('youtube.com') || content.includes('youtu.be')) return 'youtube';
@@ -808,7 +811,7 @@ class QRCodeRecords {
         if (content.match(/^https?:\/\//)) return 'url';
         return 'text';
     }
-    
+
     detectCategory(content) {
         const type = this.detectContentType(content);
         const categoryMap = {
@@ -820,15 +823,15 @@ class QRCodeRecords {
         };
         return categoryMap[type] || 'Text/URL';
     }
-    
+
     async addRecordAction(action) {
         // Get current QR code data
         const qrInput = document.getElementById('qr-input');
         const qrSize = document.getElementById('qr-size');
         const activeTypeBtn = document.querySelector('.qr-type-btn.active');
-        
+
         if (!qrInput || !qrInput.value.trim()) return;
-        
+
         const recordData = {
             timestamp: new Date().toISOString(),
             content: this.getCurrentContent(),
@@ -844,13 +847,13 @@ class QRCodeRecords {
             scanCount: 0,
             qrImage: this.getCurrentQRImage()
         };
-        
+
         // Check if record already exists
         const existingRecord = this.records.find(r => r.content === recordData.content);
         if (existingRecord) {
             existingRecord.actions[action] = true;
             existingRecord.timestamp = recordData.timestamp;
-            
+
             // Update in Firebase if it has a Firebase ID and Firebase is available
             if (existingRecord.firebaseId && window.firebaseDB && !window.firebaseInitFailed) {
                 try {
@@ -858,7 +861,7 @@ class QRCodeRecords {
                         actions: existingRecord.actions,
                         timestamp: existingRecord.timestamp
                     });
-                    
+
                     if (!updateSuccess) {
                         console.warn('Firebase update failed, but local record was updated');
                     }
@@ -866,7 +869,7 @@ class QRCodeRecords {
                     console.error('Error updating record action in Firebase:', error);
                 }
             }
-            
+
             // Update localStorage
             localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         } else {
@@ -893,16 +896,16 @@ class QRCodeRecords {
                 recordData.id = Date.now().toString();
                 console.log('Firebase not available, using local ID:', recordData.id);
             }
-            
+
             this.records.unshift(recordData);
         }
-        
+
         // Save to localStorage as backup
         localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         console.log(`Record action '${action}' added successfully`);
         return true;
     }
-    
+
     getCurrentContent() {
         const qrInput = document.getElementById('qr-input');
         const wifiSsid = document.getElementById('wifi-ssid');
@@ -911,9 +914,9 @@ class QRCodeRecords {
         const youtubeUrl = document.getElementById('youtube-url');
         const videoUrl = document.getElementById('video-url');
         const activeTypeBtn = document.querySelector('.qr-type-btn.active');
-        
+
         if (!activeTypeBtn) return qrInput ? qrInput.value : '';
-        
+
         switch (activeTypeBtn.dataset.type) {
             case 'text':
                 return qrInput ? qrInput.value : '';
@@ -927,11 +930,11 @@ class QRCodeRecords {
                 return qrInput ? qrInput.value : '';
         }
     }
-    
+
     getCurrentCategory() {
         const activeTypeBtn = document.querySelector('.qr-type-btn.active');
         if (!activeTypeBtn) return 'Text/URL';
-        
+
         const categoryMap = {
             'text': 'Text/URL',
             'wifi': 'WiFi',
@@ -940,12 +943,12 @@ class QRCodeRecords {
         };
         return categoryMap[activeTypeBtn.dataset.type] || 'Text/URL';
     }
-    
+
     getCurrentQRImage() {
         const qrImage = document.querySelector('#qr-container img');
         return qrImage ? qrImage.src : null;
     }
-    
+
     async loadRecordsFromFirebase() {
         try {
             // Check if Firebase services are available
@@ -954,42 +957,42 @@ class QRCodeRecords {
                 this.loadRecordsFromLocalStorage();
                 return;
             }
-            
+
             // Verify Firebase services are properly initialized
             if (!window.firebaseServices.collection || !window.firebaseServices.getDocs) {
                 console.warn('Firebase services not properly initialized, loading from localStorage');
                 this.loadRecordsFromLocalStorage();
                 return;
             }
-            
+
             const { collection, getDocs } = window.firebaseServices;
-            
+
             try {
                 console.log('Attempting to fetch records from Firebase...');
                 const querySnapshot = await Promise.race([
                     getDocs(collection(window.firebaseDB, 'qrRecords')),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase query timeout')), 5000))
                 ]);
-                
+
                 this.records = [];
                 querySnapshot.forEach((doc) => {
                     try {
-                        const record = { 
-                            id: doc.id, 
+                        const record = {
+                            id: doc.id,
                             firebaseId: doc.id,
-                            ...doc.data() 
+                            ...doc.data()
                         };
                         this.records.push(record);
                     } catch (docError) {
                         console.error('Error processing document:', docError);
                     }
                 });
-                
+
                 // Sort by timestamp (newest first)
                 this.records.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-                
+
                 console.log(`Successfully loaded ${this.records.length} records from Firebase`);
-                
+
                 // Save to localStorage as backup
                 localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
             } catch (error) {
@@ -1001,7 +1004,7 @@ class QRCodeRecords {
             this.loadRecordsFromLocalStorage();
         }
     }
-    
+
     loadRecordsFromLocalStorage() {
         try {
             const storedRecords = localStorage.getItem('qrCodeRecords');
@@ -1044,21 +1047,21 @@ class QRCodeRecords {
                 console.warn('Firebase not available or initialization failed, skipping Firebase save');
                 return Date.now().toString(); // Return a timestamp-based ID as fallback
             }
-            
+
             // Verify Firebase services are properly initialized
             if (!window.firebaseServices.collection || !window.firebaseServices.addDoc) {
                 console.warn('Firebase services not properly initialized, skipping Firebase save');
                 return Date.now().toString();
             }
-            
+
             const { collection, addDoc } = window.firebaseServices;
-            
+
             // Set a timeout for Firebase operations
             const docRef = await Promise.race([
                 addDoc(collection(window.firebaseDB, 'qrRecords'), recordData),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase save timeout')), 5000))
             ]);
-            
+
             console.log('Record saved to Firebase successfully with ID:', docRef.id);
             return docRef.id;
         } catch (error) {
@@ -1074,21 +1077,21 @@ class QRCodeRecords {
                 console.warn('Firebase not available or initialization failed, skipping Firebase update');
                 return false;
             }
-            
+
             // Verify Firebase services are properly initialized
             if (!window.firebaseServices.doc || !window.firebaseServices.updateDoc) {
                 console.warn('Firebase services not properly initialized, skipping Firebase update');
                 return false;
             }
-            
+
             const { doc, updateDoc } = window.firebaseServices;
-            
+
             // Set a timeout for Firebase operations
             await Promise.race([
                 updateDoc(doc(window.firebaseDB, 'qrRecords', recordId), updates),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase update timeout')), 5000))
             ]);
-            
+
             console.log('Record updated in Firebase successfully with ID:', recordId);
             return true;
         } catch (error) {
@@ -1104,21 +1107,21 @@ class QRCodeRecords {
                 console.warn('Firebase not available or initialization failed, skipping Firebase delete');
                 return false;
             }
-            
+
             // Verify Firebase services are properly initialized
             if (!window.firebaseServices.doc || !window.firebaseServices.deleteDoc) {
                 console.warn('Firebase services not properly initialized, skipping Firebase delete');
                 return false;
             }
-            
+
             const { doc, deleteDoc } = window.firebaseServices;
-            
+
             // Set a timeout for Firebase operations
             await Promise.race([
                 deleteDoc(doc(window.firebaseDB, 'qrRecords', recordId)),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase delete timeout')), 5000))
             ]);
-            
+
             console.log('Record deleted from Firebase successfully with ID:', recordId);
             return true;
         } catch (error) {
@@ -1126,27 +1129,27 @@ class QRCodeRecords {
             return false;
         }
     }
-    
+
     showProfile() {
         this.profileModal.style.display = 'flex';
     }
-    
+
     hideProfile() {
         this.profileModal.style.display = 'none';
     }
-    
+
     showRecords() {
         this.renderRecords();
         this.recordsModal.style.display = 'flex';
     }
-    
+
     hideRecords() {
         this.recordsModal.style.display = 'none';
     }
-    
+
     renderRecords() {
         if (!this.recordsList) return;
-        
+
         if (this.records.length === 0) {
             this.recordsList.innerHTML = `
                 <div class="record-item" style="text-align: center; color: #666;">
@@ -1156,7 +1159,7 @@ class QRCodeRecords {
             `;
             return;
         }
-        
+
         this.recordsList.innerHTML = this.records.map(record => `
             <div class="record-item">
                 <div class="record-header">
@@ -1195,7 +1198,7 @@ class QRCodeRecords {
             </div>
         `).join('');
     }
-    
+
     getCategoryIcon(category) {
         const icons = {
             'Text/URL': '📝',
@@ -1205,17 +1208,17 @@ class QRCodeRecords {
         };
         return icons[category] || '📄';
     }
-    
+
     formatDate(timestamp) {
         const date = new Date(timestamp);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     }
-    
+
     truncateText(text, maxLength) {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     }
-    
+
     async copyContent(recordId) {
         const record = this.records.find(r => r.id === recordId);
         if (record) {
@@ -1230,7 +1233,7 @@ class QRCodeRecords {
             }
         }
     }
-    
+
     regenerateQR(recordId) {
         const record = this.records.find(r => r.id === recordId);
         if (record) {
@@ -1247,12 +1250,12 @@ class QRCodeRecords {
             this.hideRecords();
         }
     }
-    
+
     async updateRecordAction(recordId, action) {
         const record = this.records.find(r => r.id === recordId);
         if (record) {
             record.actions[action] = true;
-            
+
             // Update in Firebase if it has a Firebase ID
             if (record.firebaseId) {
                 try {
@@ -1263,18 +1266,18 @@ class QRCodeRecords {
                     console.error('Error updating record action in Firebase:', error);
                 }
             }
-            
+
             // Update localStorage
             localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
         }
     }
-    
+
     async deleteRecord(recordId) {
         if (confirm('Are you sure you want to delete this record?')) {
             const record = this.records.find(r => r.id === recordId);
             if (record) {
                 let firebaseDeleteSuccess = true;
-                
+
                 // Delete from Firebase if it has a Firebase ID
                 if (record.firebaseId && window.firebaseDB && !window.firebaseInitFailed) {
                     try {
@@ -1287,15 +1290,15 @@ class QRCodeRecords {
                         firebaseDeleteSuccess = false;
                     }
                 }
-                
+
                 // Remove from local records
                 this.records = this.records.filter(r => r.id !== recordId);
-                
+
                 // Update localStorage
                 localStorage.setItem('qrCodeRecords', JSON.stringify(this.records));
-                
+
                 this.renderRecords();
-                
+
                 if (firebaseDeleteSuccess) {
                     this.showNotification('Record deleted successfully!');
                 } else {
@@ -1304,7 +1307,7 @@ class QRCodeRecords {
             }
         }
     }
-    
+
     showNotification(message) {
         const notification = document.createElement('div');
         notification.className = 'notification';
@@ -1323,19 +1326,19 @@ class QRCodeRecords {
             font-weight: 600;
         `;
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);
     }
-    
+
     initPlatformSelection() {
         const aiAgentBtn = document.getElementById('ai-agent-btn');
         const platformModal = document.getElementById('platform-modal');
         const closePlatform = document.getElementById('close-platform');
         const iphoneBtn = document.getElementById('iphone-btn');
         const androidBtn = document.getElementById('android-btn');
-        
+
         if (aiAgentBtn) {
             aiAgentBtn.addEventListener('click', () => {
                 this.hideProfile();
@@ -1344,11 +1347,11 @@ class QRCodeRecords {
                 this.restoreAIAgentHandlers();
             });
         }
-        
+
         if (closePlatform) {
             closePlatform.addEventListener('click', () => this.hidePlatformModal());
         }
-        
+
         if (platformModal) {
             platformModal.addEventListener('click', (e) => {
                 if (e.target === platformModal) {
@@ -1356,38 +1359,38 @@ class QRCodeRecords {
                 }
             });
         }
-        
+
         if (iphoneBtn) {
             iphoneBtn.addEventListener('click', () => this.handleIPhoneSelection());
         }
-        
+
         if (androidBtn) {
             androidBtn.addEventListener('click', () => this.handleAndroidSelection());
         }
     }
-    
+
     showPlatformModal() {
         const platformModal = document.getElementById('platform-modal');
         if (platformModal) {
             platformModal.style.display = 'flex';
         }
     }
-    
+
     hidePlatformModal() {
         const platformModal = document.getElementById('platform-modal');
         if (platformModal) {
             platformModal.style.display = 'none';
         }
     }
-    
+
     handleIPhoneSelection() {
         this.hidePlatformModal();
         this.showNotification('The iOS app is currently under development and will be available soon. Thank you for your patience!');
     }
-    
+
     handleAndroidSelection() {
         this.hidePlatformModal();
-        
+
         // Request permissions for Android
         if ('permissions' in navigator) {
             navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
@@ -1407,7 +1410,7 @@ class QRCodeRecords {
             this.showAndroidDownloadDialog();
         }
     }
-    
+
     requestNotificationPermission() {
         if ('Notification' in window) {
             Notification.requestPermission().then((permission) => {
@@ -1423,7 +1426,7 @@ class QRCodeRecords {
             this.showAndroidDownloadDialog();
         }
     }
-    
+
     showAndroidDownloadDialog() {
         const dialog = document.createElement('div');
         dialog.className = 'download-dialog';
@@ -1437,7 +1440,7 @@ class QRCodeRecords {
                 </div>
             </div>
         `;
-        
+
         // Add styles
         dialog.style.cssText = `
             position: fixed;
@@ -1449,7 +1452,7 @@ class QRCodeRecords {
             z-index: 2000;
             animation: fadeIn 0.3s;
         `;
-        
+
         const content = dialog.querySelector('.download-dialog-content');
         content.style.cssText = `
             background: #101820;
@@ -1461,7 +1464,7 @@ class QRCodeRecords {
             text-align: center;
             color: #fff;
         `;
-        
+
         const buttons = dialog.querySelector('.download-buttons');
         buttons.style.cssText = `
             display: flex;
@@ -1469,19 +1472,19 @@ class QRCodeRecords {
             margin-top: 20px;
             justify-content: center;
         `;
-        
+
         document.body.appendChild(dialog);
-        
+
         // Event listeners
         dialog.querySelector('.download-confirm').addEventListener('click', () => {
             this.downloadAPK();
             dialog.remove();
         });
-        
+
         dialog.querySelector('.download-cancel').addEventListener('click', () => {
             dialog.remove();
         });
-        
+
         // Close on outside click
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) {
@@ -1489,7 +1492,7 @@ class QRCodeRecords {
             }
         });
     }
-    
+
     downloadAPK() {
         try {
             const link = document.createElement('a');
@@ -1499,17 +1502,17 @@ class QRCodeRecords {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             // Mark as downloaded
             localStorage.setItem('amik-ai-agent-downloaded', 'true');
-            
+
             this.showNotification('Download started! Please install the APK file.');
         } catch (error) {
             console.error('Error downloading APK:', error);
             this.showNotification('Error downloading APK. Please try again.');
         }
     }
-    
+
     // App Download Popup functionality
     initAppDownloadPopup() {
         console.log('Initializing app download popup...');
@@ -1517,18 +1520,18 @@ class QRCodeRecords {
         const closeAppPopup = document.getElementById('close-app-popup');
         const downloadAppBtn = document.getElementById('download-app-btn');
         const maybeLaterBtn = document.getElementById('maybe-later-btn');
-        
+
         console.log('Found elements:', {
             appDownloadPopup: !!appDownloadPopup,
             closeAppPopup: !!closeAppPopup,
             downloadAppBtn: !!downloadAppBtn,
             maybeLaterBtn: !!maybeLaterBtn
         });
-        
+
         if (closeAppPopup) {
             closeAppPopup.addEventListener('click', () => this.hideAppDownloadPopup());
         }
-        
+
         if (appDownloadPopup) {
             appDownloadPopup.addEventListener('click', (e) => {
                 if (e.target === appDownloadPopup) {
@@ -1536,7 +1539,7 @@ class QRCodeRecords {
                 }
             });
         }
-        
+
         if (downloadAppBtn) {
             downloadAppBtn.addEventListener('click', () => {
                 this.hideAppDownloadPopup();
@@ -1545,11 +1548,11 @@ class QRCodeRecords {
                 this.updatePlatformModalForQRCode();
             });
         }
-        
+
         if (maybeLaterBtn) {
             maybeLaterBtn.addEventListener('click', () => this.hideAppDownloadPopup());
         }
-        
+
         const showAgainBtn = document.getElementById('show-again-btn');
         if (showAgainBtn) {
             showAgainBtn.addEventListener('click', () => {
@@ -1558,52 +1561,52 @@ class QRCodeRecords {
                 this.showNotification('Popup will show again on your next visit!');
             });
         }
-        
+
         // Show popup after a delay
         this.scheduleAppDownloadPopup();
-        
+
         // For testing - force popup to show after 2 seconds
         setTimeout(() => {
             console.log('Testing popup - forcing to show');
             this.forceShowPopup();
         }, 2000);
     }
-    
+
     scheduleAppDownloadPopup() {
         // Check if user has already seen the popup
         const hasSeenPopup = localStorage.getItem('amik-qr-app-popup-seen');
         console.log('Popup scheduling check:', { hasSeenPopup });
-        
+
         if (hasSeenPopup) {
             console.log('Popup already seen, not showing');
             return;
         }
-        
+
         // Check if user is already using the app
         const isUsingApp = this.checkIfUsingApp();
         console.log('Is using app:', isUsingApp);
-        
+
         if (isUsingApp) {
             console.log('User is using app, not showing popup');
             return;
         }
-        
+
         console.log('Scheduling popup to show in 3 seconds');
         // Show popup after 3 seconds
         setTimeout(() => {
             this.showAppDownloadPopup();
         }, 3000);
-        
+
         // For debugging - log the detection results
         console.log('Final detection result - Popup will show:', true);
     }
-    
+
     // Method to reset popup (for testing or if user wants to see it again)
     resetAppDownloadPopup() {
         localStorage.removeItem('amik-qr-app-popup-seen');
         console.log('App download popup reset - will show again on next visit');
     }
-    
+
     // Method to clear download history (for testing or if user wants to reset)
     clearDownloadHistory() {
         localStorage.removeItem('amik-qr-app-downloaded');
@@ -1611,14 +1614,14 @@ class QRCodeRecords {
         localStorage.removeItem('amik-ai-agent-downloaded');
         console.log('Download history cleared');
     }
-    
+
     // Method to manually trigger popup for testing
     forceShowPopup() {
         localStorage.removeItem('amik-qr-app-popup-seen');
         this.showAppDownloadPopup();
         console.log('Forcing popup to show');
     }
-    
+
     showAppDownloadPopup() {
         const appDownloadPopup = document.getElementById('app-download-popup');
         if (appDownloadPopup) {
@@ -1627,34 +1630,34 @@ class QRCodeRecords {
             localStorage.setItem('amik-qr-app-popup-seen', 'true');
         }
     }
-    
+
     hideAppDownloadPopup() {
         const appDownloadPopup = document.getElementById('app-download-popup');
         if (appDownloadPopup) {
             appDownloadPopup.style.display = 'none';
         }
     }
-    
+
     // Update the platform modal to handle both AI Agent and QR Code apps
     updatePlatformModalForQRCode() {
         const iphoneBtn = document.getElementById('iphone-btn');
         const androidBtn = document.getElementById('android-btn');
         const platformModal = document.getElementById('platform-modal');
-        
+
         if (iphoneBtn && androidBtn && platformModal) {
             // Update event listeners for QR Code app
             iphoneBtn.onclick = () => this.handleQRCodeIPhoneSelection();
             androidBtn.onclick = () => this.handleQRCodeAndroidSelection();
         }
     }
-    
+
     handleQRCodeIPhoneSelection() {
         this.hidePlatformModal();
-        
+
         // Show iOS download dialog when available
         this.showIOSDownloadDialog();
     }
-    
+
     showIOSDownloadDialog() {
         const dialog = document.createElement('div');
         dialog.className = 'download-dialog';
@@ -1669,7 +1672,7 @@ class QRCodeRecords {
                 </div>
             </div>
         `;
-        
+
         // Add styles
         dialog.style.cssText = `
             position: fixed;
@@ -1681,7 +1684,7 @@ class QRCodeRecords {
             z-index: 2000;
             animation: fadeIn 0.3s;
         `;
-        
+
         const content = dialog.querySelector('.download-dialog-content');
         content.style.cssText = `
             background: #101820;
@@ -1693,7 +1696,7 @@ class QRCodeRecords {
             text-align: center;
             color: #fff;
         `;
-        
+
         const buttons = dialog.querySelector('.download-buttons');
         buttons.style.cssText = `
             display: flex;
@@ -1701,20 +1704,20 @@ class QRCodeRecords {
             margin-top: 20px;
             justify-content: center;
         `;
-        
+
         document.body.appendChild(dialog);
-        
+
         // Event listeners
         dialog.querySelector('.notify-me-btn').addEventListener('click', () => {
             localStorage.setItem('amik-qr-ipa-downloaded', 'true');
             this.showNotification('We\'ll notify you when the iOS app is available!');
             dialog.remove();
         });
-        
+
         dialog.querySelector('.download-cancel').addEventListener('click', () => {
             dialog.remove();
         });
-        
+
         // Close on outside click
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) {
@@ -1722,10 +1725,10 @@ class QRCodeRecords {
             }
         });
     }
-    
+
     handleQRCodeAndroidSelection() {
         this.hidePlatformModal();
-        
+
         // Request permissions for Android
         if ('permissions' in navigator) {
             navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
@@ -1741,7 +1744,7 @@ class QRCodeRecords {
             this.showQRCodeDownloadDialog();
         }
     }
-    
+
     requestNotificationPermissionForQRCode() {
         if ('Notification' in window) {
             Notification.requestPermission().then((permission) => {
@@ -1757,7 +1760,7 @@ class QRCodeRecords {
             this.showQRCodeDownloadDialog();
         }
     }
-    
+
     showQRCodeDownloadDialog() {
         const dialog = document.createElement('div');
         dialog.className = 'download-dialog';
@@ -1771,7 +1774,7 @@ class QRCodeRecords {
                 </div>
             </div>
         `;
-        
+
         // Add styles
         dialog.style.cssText = `
             position: fixed;
@@ -1783,7 +1786,7 @@ class QRCodeRecords {
             z-index: 2000;
             animation: fadeIn 0.3s;
         `;
-        
+
         const content = dialog.querySelector('.download-dialog-content');
         content.style.cssText = `
             background: #101820;
@@ -1795,7 +1798,7 @@ class QRCodeRecords {
             text-align: center;
             color: #fff;
         `;
-        
+
         const buttons = dialog.querySelector('.download-buttons');
         buttons.style.cssText = `
             display: flex;
@@ -1803,19 +1806,19 @@ class QRCodeRecords {
             margin-top: 20px;
             justify-content: center;
         `;
-        
+
         document.body.appendChild(dialog);
-        
+
         // Event listeners
         dialog.querySelector('.download-confirm').addEventListener('click', () => {
             this.downloadQRCodeAPK();
             dialog.remove();
         });
-        
+
         dialog.querySelector('.download-cancel').addEventListener('click', () => {
             dialog.remove();
         });
-        
+
         // Close on outside click
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) {
@@ -1823,71 +1826,73 @@ class QRCodeRecords {
             }
         });
     }
-    
+
     downloadQRCodeAPK() {
         try {
             const link = document.createElement('a');
-            link.href = 'app-release-amikqrcode.apk';
-            link.download = 'AMIK_QR_CODE.apk';
+            // Use the new v1.2 filename
+            link.href = 'AMIK QR CODE v1.2.apk';
+            link.download = 'AMIK QR CODE v1.2.apk';
             link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
-            // Mark as downloaded
+
+            // Mark as downloaded and store version
             localStorage.setItem('amik-qr-app-downloaded', 'true');
-            
-            this.showNotification('Download started! Please install the APK file.');
+            localStorage.setItem('amik-qr-app-version', '1.2');
+
+            this.showNotification('Download started! Please install the new version.');
         } catch (error) {
             console.error('Error downloading APK:', error);
             this.showNotification('Error downloading APK. Please try again.');
         }
     }
-    
+
     restoreAIAgentHandlers() {
         const iphoneBtn = document.getElementById('iphone-btn');
         const androidBtn = document.getElementById('android-btn');
-        
+
         if (iphoneBtn && androidBtn) {
             // Restore original AI Agent handlers
             iphoneBtn.onclick = () => this.handleIPhoneSelection();
             androidBtn.onclick = () => this.handleAndroidSelection();
         }
     }
-    
+
     // Check if user is using the app (PWA or native app)
     checkIfUsingApp() {
         // Check if running as PWA
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                      window.navigator.standalone === true;
-        
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+
         // Check if user has downloaded the app
         const hasDownloadedAPK = localStorage.getItem('amik-qr-app-downloaded');
         const hasDownloadedIPA = localStorage.getItem('amik-qr-ipa-downloaded');
-        
+
         // Check if user agent indicates mobile app (including Median.co app wrapper)
         const userAgent = navigator.userAgent.toLowerCase();
-        
+
         // Only detect specific app identifiers, not general mobile browsers
-        const isMobileApp = userAgent.includes('amik-qr-code') || 
-                           userAgent.includes('amikqr') ||
-                           userAgent.includes('amik_qr') ||
-                           userAgent.includes('median.co') ||
-                           userAgent.includes('medianapp') ||
-                           // Only detect WebView when it's clearly an app wrapper
-                           (userAgent.includes('wv') && userAgent.includes('amik')) ||
-                           (userAgent.includes('webview') && userAgent.includes('amik'));
-        
+        const isMobileApp = userAgent.includes('amik-qr-code') ||
+            userAgent.includes('amikqr') ||
+            userAgent.includes('amik_qr') ||
+            userAgent.includes('median.co') ||
+            userAgent.includes('medianapp') ||
+            // Only detect WebView when it's clearly an app wrapper
+            (userAgent.includes('wv') && userAgent.includes('amik')) ||
+            (userAgent.includes('webview') && userAgent.includes('amik'));
+
         // Check for Median.co specific indicators (only actual app environment)
-        const isMedianApp = window.median || 
-                           window.Median || 
-                           userAgent.includes('median.co') ||
-                           userAgent.includes('medianapp');
-        
+        const isMedianApp = window.median ||
+            window.Median ||
+            userAgent.includes('median.co') ||
+            userAgent.includes('medianapp');
+
         // Only detect PWA when it's actually installed as standalone
-        const isAppEnvironment = window.navigator.standalone === true || 
-                               window.matchMedia('(display-mode: standalone)').matches;
-        
+        const isAppEnvironment = window.navigator.standalone === true ||
+            window.matchMedia('(display-mode: standalone)').matches;
+
         console.log('App detection:', {
             isPWA,
             hasDownloadedAPK,
@@ -1897,15 +1902,83 @@ class QRCodeRecords {
             isAppEnvironment,
             userAgent
         });
-        
+
         return isPWA || hasDownloadedAPK || hasDownloadedIPA || isMobileApp || isMedianApp || isAppEnvironment;
+    }
+
+    // New check for updates specifically for Median.co Android app
+    checkAppVersion() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMedianAndroid = (window.median || window.Median || userAgent.includes('median.co') || userAgent.includes('medianapp')) &&
+            (userAgent.includes('android'));
+
+        if (isMedianAndroid) {
+            const currentVersion = '1.2';
+            const installedVersion = localStorage.getItem('amik-qr-app-version') || '1.1';
+
+            if (installedVersion !== currentVersion) {
+                this.showUpdatePrompt();
+            }
+        }
+    }
+
+    showUpdatePrompt() {
+        const dialog = document.createElement('div');
+        dialog.className = 'download-dialog update-prompt';
+        dialog.innerHTML = `
+            <div class="download-dialog-content">
+                <div class="update-icon" style="font-size: 50px; margin-bottom: 15px;">🚀</div>
+                <h3>Update Available (v1.2)</h3>
+                <p>A new version of AMIK QR CODE is available with enhanced scanner support and bug fixes.</p>
+                <p>Would you like to update now?</p>
+                <div class="download-buttons">
+                    <button class="btn-primary update-confirm">Update Now</button>
+                    <button class="btn-secondary update-later">Later</button>
+                </div>
+            </div>
+        `;
+
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 20, 30, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            animation: fadeIn 0.3s;
+        `;
+
+        const content = dialog.querySelector('.download-dialog-content');
+        content.style.cssText = `
+            background: #101820;
+            border-radius: 20px;
+            box-shadow: 0 0 50px #00ffff77;
+            padding: 30px;
+            max-width: 400px;
+            width: 90vw;
+            text-align: center;
+            color: #fff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        `;
+
+        document.body.appendChild(dialog);
+
+        dialog.querySelector('.update-confirm').addEventListener('click', () => {
+            this.downloadQRCodeAPK();
+            dialog.remove();
+        });
+
+        dialog.querySelector('.update-later').addEventListener('click', () => {
+            dialog.remove();
+        });
     }
 }
 
 // Disable zoom functionality
 document.addEventListener('DOMContentLoaded', () => {
     // Prevent zoom with keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         // Prevent Ctrl/Cmd + +, -, 0, scroll
         if ((e.ctrlKey || e.metaKey) && (e.keyCode === 61 || e.keyCode === 107 || e.keyCode === 173 || e.keyCode === 109 || e.keyCode === 187 || e.keyCode === 189 || e.keyCode === 48)) {
             e.preventDefault();
@@ -1914,7 +1987,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Prevent zoom with mouse wheel
-    document.addEventListener('wheel', function(e) {
+    document.addEventListener('wheel', function (e) {
         if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             return false;
@@ -1923,7 +1996,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Prevent zoom with touch gestures
     let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(e) {
+    document.addEventListener('touchend', function (e) {
         const now = (new Date()).getTime();
         if (now - lastTouchEnd <= 300) {
             e.preventDefault();
@@ -1932,15 +2005,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }, false);
 
     // Prevent pinch zoom
-    document.addEventListener('gesturestart', function(e) {
+    document.addEventListener('gesturestart', function (e) {
         e.preventDefault();
     }, false);
 
-    document.addEventListener('gesturechange', function(e) {
+    document.addEventListener('gesturechange', function (e) {
         e.preventDefault();
     }, false);
 
-    document.addEventListener('gestureend', function(e) {
+    document.addEventListener('gestureend', function (e) {
         e.preventDefault();
     }, false);
 });
@@ -1956,7 +2029,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(initApp, 200);
         }
     }
-    
+
     setTimeout(initApp, 100);
 });
 
@@ -1968,22 +2041,22 @@ document.addEventListener('DOMContentLoaded', () => {
         card.addEventListener('mouseenter', () => {
             card.style.transform = 'translateY(-5px)';
         });
-        
+
         card.addEventListener('mouseleave', () => {
             card.style.transform = 'translateY(0)';
         });
     });
-    
+
     // Add ripple effect to buttons
     const buttons = document.querySelectorAll('.btn-primary, .btn-secondary');
     buttons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             const ripple = document.createElement('span');
             const rect = this.getBoundingClientRect();
             const size = Math.max(rect.width, rect.height);
             const x = e.clientX - rect.left - size / 2;
             const y = e.clientY - rect.top - size / 2;
-            
+
             ripple.style.cssText = `
                 position: absolute;
                 width: ${size}px;
@@ -1996,17 +2069,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 animation: ripple 0.6s ease-out;
                 pointer-events: none;
             `;
-            
+
             this.style.position = 'relative';
             this.style.overflow = 'hidden';
             this.appendChild(ripple);
-            
+
             setTimeout(() => {
                 ripple.remove();
             }, 600);
         });
     });
-    
+
     // Add CSS for ripple animation
     const style = document.createElement('style');
     style.textContent = `
@@ -2023,7 +2096,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // PWA install button logic removed
 
 // QR/Barcode Scanner logic
-(function() {
+(function () {
     let html5QrScriptLoaded = false;
     function loadHtml5QrScript(callback) {
         if (html5QrScriptLoaded) return callback();
@@ -2031,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use local script for offline support
         script.src = 'html5-qrcode.min.js';
         script.onload = () => { html5QrScriptLoaded = true; callback(); };
-        script.onerror = () => { 
+        script.onerror = () => {
             console.error('Failed to load local HTML5 QR Code scanner script, trying CDN fallback...');
             const fallbackScript = document.createElement('script');
             fallbackScript.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
@@ -2072,16 +2145,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-        
+
         function startScanner() {
             try {
                 html5Qr = new window.Html5Qrcode('qr-reader');
-                const config = { 
-                    fps: 20, 
-                    qrbox: { width: 250, height: 250 }, 
+                const config = {
+                    fps: 20,
+                    qrbox: { width: 250, height: 250 },
                     aspectRatio: 1,
                     // Enable support for all formats including barcodes
-                    formatsToSupport: [ 
+                    formatsToSupport: [
                         window.Html5QrcodeSupportedFormats.QR_CODE,
                         window.Html5QrcodeSupportedFormats.AZTEC,
                         window.Html5QrcodeSupportedFormats.CODABAR,
@@ -2101,7 +2174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION
                     ]
                 };
-                
+
                 html5Qr.start(
                     { facingMode: 'environment' },
                     config,
@@ -2136,10 +2209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="scan-content" id="final-scan-text">${decodedText}</div>
                 <div class="scan-actions-grid" id="scan-actions-container"></div>
             `;
-            
+
             scanResult.innerHTML = resultHtml;
             const actionContainer = document.getElementById('scan-actions-container');
-            
+
             // Analyze content and add buttons
             const actions = analyzeScannedContent(decodedText);
             actions.forEach(action => {
@@ -2219,7 +2292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return actions;
         }
-        
+
         closeScanner.addEventListener('click', () => {
             scannerModal.style.display = 'none';
             if (html5Qr) {
@@ -2238,7 +2311,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!window.qrGenerator) {
         window.qrGenerator = new QRCodeGenerator();
     }
-    
+
     // Listen for Firebase ready event
     document.addEventListener('firebase-ready', (event) => {
         console.log('Firebase ready event received:', event.detail);
@@ -2252,11 +2325,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
-    
+
     // Wait for Firebase to be available
     let attempts = 0;
     const maxAttempts = 30; // 3 seconds max wait
-    
+
     const waitForFirebase = () => {
         // Check if Firebase is available or if initialization failed
         if ((window.firebaseDB && window.firebaseServices) || window.firebaseInitFailed) {
@@ -2286,6 +2359,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     };
-    
+
     waitForFirebase();
 });
