@@ -671,19 +671,8 @@ class QRCodeRecords {
     }
 
     initRecords() {
-        if (this.profileBtn) {
-            this.profileBtn.addEventListener('click', () => this.showProfile());
-        }
-        if (this.closeProfile) {
-            this.closeProfile.addEventListener('click', () => this.hideProfile());
-        }
-        if (this.profileModal) {
-            this.profileModal.addEventListener('click', (e) => {
-                if (e.target === this.profileModal) {
-                    this.hideProfile();
-                }
-            });
-        }
+        // Profile modal handlers are now initialized immediately on DOM load
+        // Only keep Records modal handlers here
         if (this.recordsBtn) {
             this.recordsBtn.addEventListener('click', () => {
                 this.hideProfile();
@@ -2130,10 +2119,22 @@ document.addEventListener('DOMContentLoaded', () => {
             loadHtml5QrScript(() => {
                 try {
                     if (html5Qr) {
+                        // Properly stop and clear the previous instance
                         html5Qr.stop().then(() => {
+                            html5Qr.clear();
+                            qrReader.innerHTML = ''; // Clear any residual DOM
+                            html5Qr = null;
                             startScanner();
                         }).catch(err => {
                             console.error('Error stopping previous scanner instance:', err);
+                            // Force clear even if stop failed
+                            try {
+                                html5Qr.clear();
+                            } catch (e) {
+                                console.error('Error clearing scanner:', e);
+                            }
+                            qrReader.innerHTML = '';
+                            html5Qr = null;
                             startScanner();
                         });
                     } else {
@@ -2141,7 +2142,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error('Error initializing scanner:', error);
-                    scanResult.textContent = 'Error initializing scanner: ' + error.message;
+                    scanResult.textContent = 'Please try again or refresh the page.';
                 }
             });
         });
@@ -2310,6 +2311,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize QR Code Generator
     if (!window.qrGenerator) {
         window.qrGenerator = new QRCodeGenerator();
+    }
+
+    // Initialize profile button immediately (don't wait for Firebase/QRCodeRecords)
+    const profileBtn = document.getElementById('profile-btn');
+    const profileModal = document.getElementById('profile-modal');
+    const closeProfile = document.getElementById('close-profile');
+
+    if (profileBtn && profileModal) {
+        profileBtn.addEventListener('click', () => {
+            profileModal.style.display = 'flex';
+        });
+    }
+
+    if (closeProfile && profileModal) {
+        closeProfile.addEventListener('click', () => {
+            profileModal.style.display = 'none';
+        });
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) {
+                profileModal.style.display = 'none';
+            }
+        });
     }
 
     // Listen for Firebase ready event
